@@ -1,27 +1,24 @@
 import 'package:flutter/material.dart';
 import '../home/home_page.dart';
-import '../login/register.dart';
 
-class LoginDialog extends StatefulWidget {
-  const LoginDialog({super.key});
+class RegisterDialog extends StatefulWidget {
+  const RegisterDialog({super.key});
 
   @override
-  State<LoginDialog> createState() => _LoginDialogState();
+  State<RegisterDialog> createState() => _RegisterDialogState();
 }
 
-class _LoginDialogState extends State<LoginDialog> {
+class _RegisterDialogState extends State<RegisterDialog> {
   final _formKey = GlobalKey<FormState>();
-  bool _obscure = true;
+  final _emailController = TextEditingController();
+  final _fullNameController = TextEditingController();
+  final _addressController = TextEditingController();
 
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-
-  void _submitLogin() {
+  void _submitRegister() {
     if (_formKey.currentState!.validate()) {
-      // TODO: Login logic
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Logging in...")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Registering...")),
+      );
     }
   }
 
@@ -63,56 +60,35 @@ class _LoginDialogState extends State<LoginDialog> {
                     child: Column(
                       children: [
                         const Text(
-                          "Welcome Back",
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
+                          "Create Account",
+                          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.black87),
                         ),
                         const SizedBox(height: 24),
 
                         _inputField(
-                          controller: _usernameController,
-                          label: "Username",
-                          hint: "Enter your username",
-                          icon: Icons.person,
-                          obscure: false,
+                          controller: _emailController,
+                          label: "Email",
+                          hint: "Enter your email",
+                          icon: Icons.email,
                         ),
                         const SizedBox(height: 20),
 
                         _inputField(
-                          controller: _passwordController,
-                          label: "Password",
-                          hint: "Enter your password",
-                          icon: Icons.lock,
-                          obscure: _obscure,
-                          suffix: IconButton(
-                            icon: Icon(
-                              _obscure
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: Colors.grey[700],
-                            ),
-                            onPressed: () {
-                              setState(() => _obscure = !_obscure);
-                            },
-                          ),
+                          controller: _fullNameController,
+                          label: "Full Name",
+                          hint: "Enter your full name",
+                          icon: Icons.person,
                         ),
+                        const SizedBox(height: 20),
 
-                        const SizedBox(height: 10),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {},
-                            child: const Text(
-                              "Forgot password?",
-                              style: TextStyle(color: Colors.black87),
-                            ),
-                          ),
+                        _inputField(
+                          controller: _addressController,
+                          label: "Shipping Address",
+                          hint: "Enter your shipping address",
+                          icon: Icons.location_on,
                         ),
+                        const SizedBox(height: 20),
 
-                        const SizedBox(height: 10),
                         Container(
                           width: double.infinity,
                           height: 48,
@@ -123,7 +99,7 @@ class _LoginDialogState extends State<LoginDialog> {
                             borderRadius: BorderRadius.circular(30),
                           ),
                           child: ElevatedButton(
-                            onPressed: _submitLogin,
+                            onPressed: _submitRegister,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.transparent,
                               shadowColor: Colors.transparent,
@@ -131,33 +107,7 @@ class _LoginDialogState extends State<LoginDialog> {
                                 borderRadius: BorderRadius.circular(30),
                               ),
                             ),
-                            child: const Text(
-                              "LOGIN",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-                        const Text(
-                          "Don’t have an account?",
-                          style: TextStyle(color: Colors.black54),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const RegisterDialog(),
-                              ),
-                            );
-                          },
-                          child: const Text(
-                            "Register",
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.deepPurple,
-                            ),
+                            child: const Text("REGISTER", style: TextStyle(color: Colors.white)),
                           ),
                         ),
                       ],
@@ -165,7 +115,7 @@ class _LoginDialogState extends State<LoginDialog> {
                   ),
                 ),
 
-                // ⬅ Nút quay về home dưới dialog
+                // Nút quay về Home dưới dialog
                 IconButton(
                   icon: const Icon(Icons.home, size: 28, color: Colors.black),
                   onPressed: () {
@@ -176,13 +126,7 @@ class _LoginDialogState extends State<LoginDialog> {
                     );
                   },
                 ),
-                const Text(
-                  "Back to Home",
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                const Text("Back to Home", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)),
               ],
             ),
           ),
@@ -192,23 +136,20 @@ class _LoginDialogState extends State<LoginDialog> {
   }
 
   Widget _inputField({
+    required TextEditingController controller,
     required String label,
     required String hint,
     required IconData icon,
-    required bool obscure,
-    Widget? suffix,
-    required TextEditingController controller,
   }) {
     return TextFormField(
       controller: controller,
-      obscureText: obscure,
-      style: const TextStyle(fontSize: 14, color: Colors.black87),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
           return "$label cannot be empty";
         }
         return null;
       },
+      style: const TextStyle(fontSize: 14, color: Colors.black87),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
@@ -216,11 +157,7 @@ class _LoginDialogState extends State<LoginDialog> {
         filled: true,
         fillColor: const Color(0xFFF3F6FB),
         prefixIcon: Icon(icon, color: Colors.grey[800]),
-        suffixIcon: suffix,
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 18,
-          horizontal: 16,
-        ),
+        contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
