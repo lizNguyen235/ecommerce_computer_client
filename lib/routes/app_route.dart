@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
 import '../views/home/home_page.dart';
-import '../views/login/login_page.dart';
-import '../views/profile/profile_page.dart';
-
+import '../views/login/login.dart';
+import '../views/login/register.dart';
 class AppRoutes {
   static const String home = '/home';
   static const String login = '/login';
-  static const String profile = '/profile';
+  static const String register = '/register';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case home:
-        return MaterialPageRoute(builder: (_) => const HomePage());
+        return MaterialPageRoute(builder: (_) => const HomeScreen());
       case login:
-        return MaterialPageRoute(builder: (_) => const LoginPage());
-      case profile:
-        return MaterialPageRoute(builder: (_) => const ProfilePage());
+        return MaterialPageRoute(builder: (_) => const LoginDialog());
+      case register:
+        return MaterialPageRoute(builder: (_) => const RegisterDialog());
       default:
         return MaterialPageRoute(
           builder: (_) => const Scaffold(
