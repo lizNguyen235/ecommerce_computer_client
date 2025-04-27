@@ -1,4 +1,5 @@
 import 'package:ecommerce_computer_client/views/product/product_detail_screen.dart';
+import 'package:ecommerce_computer_client/views/cart/cart_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../login/login.dart';
@@ -43,6 +44,8 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   final Map<String, List<Product>> categoryProducts = {};
+  List<Product> cartItems = []; // 👈 Thêm giỏ hàng
+
   bool isDarkMode = false;
   bool showScrollToTop = false;
 
@@ -152,6 +155,21 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           IconButton(
+            icon: Icon(Icons.shopping_cart, color: textColor),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (_) => CartScreen(
+                        cartItems: cartItems,
+                        isDarkMode: isDarkMode,
+                      ),
+                ),
+              );
+            },
+          ),
+          IconButton(
             icon: Icon(
               isDarkMode ? Icons.wb_sunny : Icons.dark_mode,
               color: textColor,
@@ -176,7 +194,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               }
               if (value == 'register') {
-                // Bạn có thể thay bằng RegisterDialog nếu cần
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const LoginDialog()),
@@ -314,7 +331,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   isDarkMode: isDarkMode,
                 ),
           ),
-        );
+        ).then((addedProduct) {
+          if (addedProduct != null && addedProduct is Product) {
+            setState(() {
+              cartItems.add(addedProduct);
+            });
+          }
+        });
       },
       child: Container(
         decoration: BoxDecoration(
