@@ -110,6 +110,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  //check 1
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
@@ -159,10 +161,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           PopupMenuButton<String>(
             icon: Icon(Icons.account_circle, color: textColor),
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'login', child: Text('Đăng nhập')),
-              const PopupMenuItem(value: 'register', child: Text('Đăng ký')),
-            ],
+            itemBuilder:
+                (context) => [
+                  const PopupMenuItem(value: 'login', child: Text('Đăng nhập')),
+                  const PopupMenuItem(
+                    value: 'register',
+                    child: Text('Đăng ký'),
+                  ),
+                ],
             onSelected: (value) {
               if (value == 'login') {
                 Navigator.push(
@@ -283,11 +289,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisSpacing: 12,
                   childAspectRatio: 0.7,
                 ),
-                itemBuilder: (context, index) => _buildProductCard(
-                  products[index],
-                  cardColor,
-                  textColor,
-                ),
+                itemBuilder:
+                    (context, index) => _buildProductCard(
+                      products[index],
+                      cardColor,
+                      textColor,
+                    ),
               );
             },
           ),
