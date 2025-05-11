@@ -9,12 +9,14 @@ class Product {
   final String imageUrl;
   final double price;
   final double? discount;
+  final String category;
 
   Product({
     required this.name,
     required this.imageUrl,
     required this.price,
     this.discount,
+    required this.category,
   });
 
   double get finalPrice => discount != null ? price * (1 - discount!) : price;
@@ -31,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final ItemScrollController _scrollController = ItemScrollController();
   final ItemPositionsListener _positionsListener =
       ItemPositionsListener.create();
+  final TextEditingController _searchController = TextEditingController();
 
   final List<String> categories = [
     "Promotional Products",
@@ -44,14 +47,21 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   final Map<String, List<Product>> categoryProducts = {};
-  List<Product> cartItems = []; // 👈 Thêm giỏ hàng
-
+  List<Product> cartItems = [];
+  List<Product> filteredProducts = [];
   bool isDarkMode = false;
   bool showScrollToTop = false;
+
+  // State cho tìm kiếm, sắp xếp, lọc
+  String searchQuery = '';
+  String selectedSort = 'None';
+  String? selectedCategory;
+  RangeValues priceRange = const RangeValues(0, 5000000);
 
   @override
   void initState() {
     super.initState();
+    // Khởi tạo sản phẩm
     for (var cat in categories) {
       categoryProducts[cat] = List.generate(
         6,
@@ -60,9 +70,12 @@ class _HomeScreenState extends State<HomeScreen> {
           imageUrl: "https://picsum.photos/200?random=${cat.hashCode + index}",
           price: 1000000 + index * 500000,
           discount: index % 2 == 0 ? 0.1 + index * 0.03 : null,
+          category: cat,
         ),
       );
     }
+    // Khởi tạo danh sách sản phẩm ban đầu
+    _updateFilteredProducts();
 
     _positionsListener.itemPositions.addListener(() {
       final positions = _positionsListener.itemPositions.value;
@@ -73,6 +86,45 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     });
+
+    _searchController.addListener(() {
+      setState(() {
+        searchQuery = _searchController.text;
+        _updateFilteredProducts();
+      });
+    });
+  }
+
+  void _updateFilteredProducts() {
+    filteredProducts.clear();
+    for (var cat in categories) {
+      var products = categoryProducts[cat]!;
+      // Lọc theo danh mục
+      if (selectedCategory == null || selectedCategory == cat) {
+        // Lọc theo giá và tìm kiếm
+        filteredProducts.addAll(
+          products.where((product) {
+            final matchesSearch = product.name.toLowerCase().contains(
+              searchQuery.toLowerCase(),
+            );
+            final matchesPrice =
+                product.finalPrice >= priceRange.start &&
+                product.finalPrice <= priceRange.end;
+            return matchesSearch && matchesPrice;
+          }),
+        );
+      }
+    }
+    // Sắp xếp sản phẩm
+    if (selectedSort == 'Price: Low to High') {
+      filteredProducts.sort((a, b) => a.finalPrice.compareTo(b.finalPrice));
+    } else if (selectedSort == 'Price: High to Low') {
+      filteredProducts.sort((a, b) => b.finalPrice.compareTo(a.finalPrice));
+    } else if (selectedSort == 'Name: A-Z') {
+      filteredProducts.sort((a, b) => a.name.compareTo(b.name));
+    } else if (selectedSort == 'Name: Z-A') {
+      filteredProducts.sort((a, b) => b.name.compareTo(a.name));
+    }
   }
 
   void scrollToCategory(int index) {
@@ -119,7 +171,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
-
     final bgColor =
         isDarkMode ? const Color(0xFF121212) : const Color(0xFFF7F8FA);
     final textColor = isDarkMode ? Colors.white : Colors.black;
@@ -189,13 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
             onSelected: (value) {
-              if (value == 'login') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginDialog()),
-                );
-              }
-              if (value == 'register') {
+              if (value == 'login' || value == 'register') {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const LoginDialog()),
@@ -207,20 +252,90 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Stack(
         children: [
-          ScrollablePositionedList.builder(
-            itemScrollController: _scrollController,
-            itemPositionsListener: _positionsListener,
-            itemCount: categories.length + 1,
-            itemBuilder: (context, index) {
-              if (index == 0) return _buildHeader(isMobile, textColor);
-              final cat = categories[index - 1];
-              return _buildCategorySection(
-                cat,
-                categoryProducts[cat]!,
-                textColor,
-                cardColor,
-              );
-            },
+          Column(
+            children: [
+              // Thanh tìm kiếm và nút lọc/sắp xếp
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Tìm kiếm sản phẩm...',
+                          prefixIcon: Icon(Icons.search, color: textColor),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          filled: true,
+                          fillColor: cardColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    PopupMenuButton<String>(
+                      icon: Icon(Icons.sort, color: textColor),
+                      onSelected: (value) {
+                        setState(() {
+                          selectedSort = value;
+                          _updateFilteredProducts();
+                        });
+                      },
+                      itemBuilder:
+                          (context) => [
+                            const PopupMenuItem(
+                              value: 'None',
+                              child: Text('Không sắp xếp'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'Price: Low to High',
+                              child: Text('Giá: Thấp đến Cao'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'Price: High to Low',
+                              child: Text('Giá: Cao đến Thấp'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'Name: A-Z',
+                              child: Text('Tên: A-Z'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'Name: Z-A',
+                              child: Text('Tên: Z-A'),
+                            ),
+                          ],
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.filter_list, color: textColor),
+                      onPressed:
+                          () =>
+                              _showFilterDialog(context, textColor, cardColor),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ScrollablePositionedList.builder(
+                  itemScrollController: _scrollController,
+                  itemPositionsListener: _positionsListener,
+                  itemCount:
+                      (selectedCategory != null ? 1 : categories.length) + 1,
+                  itemBuilder: (context, index) {
+                    if (index == 0) return _buildHeader(isMobile, textColor);
+                    final cat = selectedCategory ?? categories[index - 1];
+                    return _buildCategorySection(
+                      cat,
+                      selectedCategory != null
+                          ? filteredProducts
+                          : categoryProducts[cat]!,
+                      textColor,
+                      cardColor,
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
           if (showScrollToTop)
             Positioned(
@@ -234,6 +349,90 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
         ],
       ),
+    );
+  }
+
+  void _showFilterDialog(
+    BuildContext context,
+    Color textColor,
+    Color cardColor,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              backgroundColor: cardColor,
+              title: Text('Lọc sản phẩm', style: TextStyle(color: textColor)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Lọc theo danh mục
+                    DropdownButton<String>(
+                      value: selectedCategory,
+                      hint: Text(
+                        'Chọn danh mục',
+                        style: TextStyle(color: textColor),
+                      ),
+                      isExpanded: true,
+                      items: [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('Tất cả'),
+                        ),
+                        ...categories.map(
+                          (cat) =>
+                              DropdownMenuItem(value: cat, child: Text(cat)),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        setStateDialog(() {
+                          selectedCategory = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    // Lọc theo khoảng giá
+                    Text('Khoảng giá', style: TextStyle(color: textColor)),
+                    RangeSlider(
+                      values: priceRange,
+                      min: 0,
+                      max: 5000000,
+                      divisions: 50,
+                      labels: RangeLabels(
+                        '${priceRange.start.toStringAsFixed(0)}đ',
+                        '${priceRange.end.toStringAsFixed(0)}đ',
+                      ),
+                      onChanged: (values) {
+                        setStateDialog(() {
+                          priceRange = values;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _updateFilteredProducts();
+                    });
+                    Navigator.pop(context);
+                  },
+                  child: Text('Áp dụng', style: TextStyle(color: Colors.blue)),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Hủy', style: TextStyle(color: textColor)),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -252,7 +451,7 @@ class _HomeScreenState extends State<HomeScreen> {
           alignment: Alignment.center,
           child: Text(
             "🔥 Chào mừng bạn đến với Computer Store 🔥",
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 15,
               fontWeight: FontWeight.bold,
@@ -413,5 +612,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 }

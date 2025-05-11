@@ -164,8 +164,6 @@ class _CartScreenState extends State<CartScreen> {
                         setState(() => _cartItems.clear());
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: priceColor,
-                        onPrimary: Colors.white,
                         elevation: 2,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
