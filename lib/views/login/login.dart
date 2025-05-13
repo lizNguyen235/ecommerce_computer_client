@@ -1,5 +1,5 @@
+import 'package:ecommerce_computer_client/views/home/home.dart';
 import 'package:flutter/material.dart';
-import '../home/home_page.dart';
 import '../login/register.dart';
 
 class LoginDialog extends StatefulWidget {
@@ -171,7 +171,7 @@ class _LoginDialogState extends State<LoginDialog> {
                   onPressed: () {
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (_) => const HomeScreen()),
+                      MaterialPageRoute(builder: (_) => const Home()),
                       (route) => false,
                     );
                   },

@@ -1,5 +1,5 @@
+import 'package:ecommerce_computer_client/views/home/home.dart';
 import 'package:flutter/material.dart';
-import '../home/home_page.dart';
 
 class RegisterDialog extends StatefulWidget {
   const RegisterDialog({super.key});
@@ -16,9 +16,9 @@ class _RegisterDialogState extends State<RegisterDialog> {
 
   void _submitRegister() {
     if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Registering...")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Registering...")));
     }
   }
 
@@ -61,7 +61,11 @@ class _RegisterDialogState extends State<RegisterDialog> {
                       children: [
                         const Text(
                           "Create Account",
-                          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.black87),
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
                         ),
                         const SizedBox(height: 24),
 
@@ -107,7 +111,10 @@ class _RegisterDialogState extends State<RegisterDialog> {
                                 borderRadius: BorderRadius.circular(30),
                               ),
                             ),
-                            child: const Text("REGISTER", style: TextStyle(color: Colors.white)),
+                            child: const Text(
+                              "REGISTER",
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                         ),
                       ],
@@ -121,12 +128,18 @@ class _RegisterDialogState extends State<RegisterDialog> {
                   onPressed: () {
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (_) => const HomeScreen()),
+                      MaterialPageRoute(builder: (_) => const Home()),
                       (route) => false,
                     );
                   },
                 ),
-                const Text("Back to Home", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)),
+                const Text(
+                  "Back to Home",
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           ),
@@ -157,7 +170,10 @@ class _RegisterDialogState extends State<RegisterDialog> {
         filled: true,
         fillColor: const Color(0xFFF3F6FB),
         prefixIcon: Icon(icon, color: Colors.grey[800]),
-        contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 18,
+          horizontal: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
