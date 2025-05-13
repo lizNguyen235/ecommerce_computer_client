@@ -1,170 +1,526 @@
+import 'dart:ui';
+import 'package:client/services/authservice.dart';
 import 'package:flutter/material.dart';
-import '../home/home_page.dart';
+import 'package:form_field_validator/form_field_validator.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-class RegisterDialog extends StatefulWidget {
-  const RegisterDialog({super.key});
-
-  @override
-  State<RegisterDialog> createState() => _RegisterDialogState();
+Future<void> showRegistrationDialog(BuildContext ctx) {
+  return showDialog(
+    context: ctx,
+    barrierDismissible: false,
+    builder: (_) => const RegistrationDialog(),
+  );
 }
 
-class _RegisterDialogState extends State<RegisterDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _fullNameController = TextEditingController();
-  final _addressController = TextEditingController();
+class RegistrationDialog extends StatefulWidget {
+  const RegistrationDialog({super.key});
+  @override
+  State<RegistrationDialog> createState() => _RegistrationDialogState();
+}
 
-  void _submitRegister() {
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Registering...")),
-      );
+class _RegistrationDialogState extends State<RegistrationDialog> {
+  final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  bool _obscurePwd = true;
+
+  final _nameCtrl = TextEditingController();
+  String? _gender;
+  final _dobCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
+
+  Future<void> _pickDate() async {
+    final d = await showDatePicker(
+      context: context,
+      initialDate: DateTime(1990),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (d != null) {
+      _dobCtrl.text =
+          "${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}";
     }
+  }
+
+  Future<void> _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    setState(() => _isLoading = true);
+
+    try {
+      var isSuccess = await register(
+        email: _emailCtrl.text.trim(),
+        password: _passwordCtrl.text.trim(),
+        fullName: _nameCtrl.text.trim(),
+        gender: _gender ?? '',
+      );
+      if (isSuccess) {
+        await showDialog(
+          context: context,
+          barrierDismissible: false, // không cho thoát bằng cách bấm ra ngoài
+          builder:
+              (context) => AlertDialog(
+                title: const Text(
+                  'Thành công',
+                  style: TextStyle(color: Colors.green),
+                ),
+                content: Text("Bạn đã đăng ký tài khoản thành công"),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(), // đóng dialog
+                    child: const Text('Đóng'),
+                  ),
+                ],
+              ),
+        );
+        Navigator.of(context).pop();
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Registration failed!')));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Register error: $e')));
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      filled: true,
+      fillColor: Colors.white.withAlpha((0.25 * 255).toInt()),
+      labelText: label,
+      labelStyle: const TextStyle(color: Colors.white70),
+      prefixIcon: Icon(icon, color: Colors.cyanAccent),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.cyanAccent),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.lightBlueAccent, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.deepOrangeAccent, width: 2),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.orangeAccent, width: 2),
+      ),
+      errorStyle: const TextStyle(
+        color: Colors.deepOrangeAccent,
+        fontWeight: FontWeight.bold,
+        shadows: [
+          Shadow(
+            blurRadius: 8,
+            color: Colors.orangeAccent,
+            offset: Offset(0, 0),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFB2FEFA), Color(0xFF0ED2F7)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    final screenW = MediaQuery.of(context).size.width;
+    final dialogW = screenW > 600 ? 400.0 : screenW * 0.9;
+    final maxH = MediaQuery.of(context).size.height * 0.8;
+
+    return Dialog(
+      insetPadding: const EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.black.withAlpha((0.85 * 255).toInt()),
+                const Color(0xFF0D47A1).withAlpha((0.75 * 255).toInt()),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.cyanAccent.withAlpha((0.8 * 255).toInt()),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.cyanAccent.withAlpha((0.3 * 255).toInt()),
+                blurRadius: 25,
+                spreadRadius: 2,
+              ),
+            ],
           ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  constraints: const BoxConstraints(maxWidth: 400),
-                  padding: const EdgeInsets.all(24),
-                  margin: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
+          constraints: BoxConstraints(maxWidth: dialogW, maxHeight: maxH),
+          child: Column(
+            children: [
+              // HEADER
+              Container(
+                height: 90,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF0D47A1), Color(0xFF1976D2)],
+                  ),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  'Create Account',
+                  style: GoogleFonts.openSans(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 20,
-                        offset: Offset(0, 8),
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(
+                        blurRadius: 10,
+                        color: Colors.cyanAccent.withAlpha((0.7 * 255).toInt()),
+                        offset: const Offset(0, 0),
                       ),
                     ],
+                  ),
+                ),
+              ),
+
+              // SCROLLABLE FORM
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
                   ),
                   child: Form(
                     key: _formKey,
                     child: Column(
                       children: [
-                        const Text(
-                          "Create Account",
-                          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.black87),
+                        // Name + Gender
+                        LayoutBuilder(
+                          builder: (ctx, cons) {
+                            if (cons.maxWidth > 350) {
+                              return Row(
+                                children: [
+                                  Expanded(
+                                    flex: 2,
+                                    child: TextFormField(
+                                      controller: _nameCtrl,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      decoration: _inputDecoration(
+                                        'Name',
+                                        Icons.person_outline,
+                                      ),
+                                      validator:
+                                          RequiredValidator(
+                                            errorText: 'Name is required',
+                                          ).call,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    flex: 1,
+                                    child: DropdownButtonFormField<String>(
+                                      isExpanded: true,
+                                      value: _gender,
+                                      dropdownColor: Colors.black,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      decoration: _inputDecoration(
+                                        'Gender',
+                                        Icons.transgender,
+                                      ),
+                                      items: const [
+                                        DropdownMenuItem(
+                                          value: 'Male',
+                                          child: Text(
+                                            'Male',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 'Female',
+                                          child: Text(
+                                            'Female',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 'Other',
+                                          child: Text(
+                                            'Other',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                      onChanged:
+                                          (v) => setState(() => _gender = v),
+                                      validator:
+                                          (v) =>
+                                              v == null
+                                                  ? 'Select gender'
+                                                  : null,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            } else {
+                              return Column(
+                                children: [
+                                  TextFormField(
+                                    controller: _nameCtrl,
+                                    style: const TextStyle(color: Colors.white),
+                                    decoration: _inputDecoration(
+                                      'Name',
+                                      Icons.person_outline,
+                                    ),
+                                    validator:
+                                        RequiredValidator(
+                                          errorText: 'Name is required',
+                                        ).call,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  DropdownButtonFormField<String>(
+                                    isExpanded: true,
+                                    value: _gender,
+                                    dropdownColor: Colors.black,
+                                    style: const TextStyle(color: Colors.white),
+                                    decoration: _inputDecoration(
+                                      'Gender',
+                                      Icons.transgender,
+                                    ),
+                                    items: const [
+                                      DropdownMenuItem(
+                                        value: 'Male',
+                                        child: Text(
+                                          'Male',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'Female',
+                                        child: Text(
+                                          'Female',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'Other',
+                                        child: Text(
+                                          'Other',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                                    ],
+                                    onChanged:
+                                        (v) => setState(() => _gender = v),
+                                    validator:
+                                        (v) =>
+                                            v == null ? 'Select gender' : null,
+                                  ),
+                                ],
+                              );
+                            }
+                          },
                         ),
+
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _dobCtrl,
+                          readOnly: true,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: _inputDecoration(
+                            'Date of Birth',
+                            Icons.calendar_today,
+                          ),
+                          onTap: _pickDate,
+                          validator:
+                              RequiredValidator(
+                                errorText: 'DOB is required',
+                              ).call,
+                        ),
+
+                        // Account Info Divider
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Row(
+                            children: [
+                              const Expanded(
+                                child: Divider(color: Colors.white30),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Account Info',
+                                style: GoogleFonts.openSans(
+                                  fontSize: 12,
+                                  color: Colors.cyanAccent,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                child: Divider(color: Colors.white30),
+                              ),
+                            ],
+                          ),
+                        ),
+                        TextFormField(
+                          controller: _emailCtrl,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: _inputDecoration(
+                            'Email',
+                            Icons.email_outlined,
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                          validator:
+                              MultiValidator([
+                                RequiredValidator(
+                                  errorText: 'Email is required',
+                                ),
+                                EmailValidator(errorText: 'Invalid email'),
+                              ]).call,
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Security Divider
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Row(
+                            children: [
+                              const Expanded(
+                                child: Divider(color: Colors.white30),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Security',
+                                style: GoogleFonts.openSans(
+                                  fontSize: 12,
+                                  color: Colors.cyanAccent,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                child: Divider(color: Colors.white30),
+                              ),
+                            ],
+                          ),
+                        ),
+                        TextFormField(
+                          controller: _passwordCtrl,
+                          obscureText: _obscurePwd,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: _inputDecoration(
+                            'Password',
+                            Icons.lock_outline,
+                          ).copyWith(
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePwd
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                                color: Colors.cyanAccent,
+                              ),
+                              onPressed:
+                                  () => setState(
+                                    () => _obscurePwd = !_obscurePwd,
+                                  ),
+                            ),
+                          ),
+                          validator:
+                              MultiValidator([
+                                RequiredValidator(
+                                  errorText: 'Password is required',
+                                ),
+                                PatternValidator(
+                                  r'^(?=.*[!@#\$&*~]).{6,}$',
+                                  errorText:
+                                      'Min 6 chars & at least 1 special char',
+                                ),
+                              ]).call,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _confirmCtrl,
+                          obscureText: _obscurePwd,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: _inputDecoration(
+                            'Confirm Password',
+                            Icons.lock_outline,
+                          ),
+                          validator:
+                              (val) => MatchValidator(
+                                errorText: 'Passwords do not match',
+                              ).validateMatch(val ?? '', _passwordCtrl.text),
+                        ),
+
                         const SizedBox(height: 24),
-
-                        _inputField(
-                          controller: _emailController,
-                          label: "Email",
-                          hint: "Enter your email",
-                          icon: Icons.email,
-                        ),
-                        const SizedBox(height: 20),
-
-                        _inputField(
-                          controller: _fullNameController,
-                          label: "Full Name",
-                          hint: "Enter your full name",
-                          icon: Icons.person,
-                        ),
-                        const SizedBox(height: 20),
-
-                        _inputField(
-                          controller: _addressController,
-                          label: "Shipping Address",
-                          hint: "Enter your shipping address",
-                          icon: Icons.location_on,
-                        ),
-                        const SizedBox(height: 20),
-
-                        Container(
+                        // Register Button
+                        SizedBox(
                           width: double.infinity,
                           height: 48,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF43C6AC), Color(0xFF191654)],
-                            ),
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: ElevatedButton(
-                            onPressed: _submitRegister,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF0D47A1), Color(0xFF00BCD4)],
                               ),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text("REGISTER", style: TextStyle(color: Colors.white)),
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                              ),
+                              onPressed: _isLoading ? null : _submit,
+                              child:
+                                  _isLoading
+                                      ? const SpinKitCircle(
+                                        size: 24,
+                                        color: Colors.white,
+                                      )
+                                      : Text(
+                                        'Register',
+                                        style: GoogleFonts.openSans(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(
+                            'Back to Login',
+                            style: GoogleFonts.openSans(
+                              color: Colors.cyanAccent,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-
-                // Nút quay về Home dưới dialog
-                IconButton(
-                  icon: const Icon(Icons.home, size: 28, color: Colors.black),
-                  onPressed: () {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HomeScreen()),
-                      (route) => false,
-                    );
-                  },
-                ),
-                const Text("Back to Home", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)),
-              ],
-            ),
+              ),
+            ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _inputField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-  }) {
-    return TextFormField(
-      controller: controller,
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return "$label cannot be empty";
-        }
-        return null;
-      },
-      style: const TextStyle(fontSize: 14, color: Colors.black87),
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        floatingLabelBehavior: FloatingLabelBehavior.auto,
-        filled: true,
-        fillColor: const Color(0xFFF3F6FB),
-        prefixIcon: Icon(icon, color: Colors.grey[800]),
-        contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFF00B4DB), width: 1.6),
         ),
       ),
     );
