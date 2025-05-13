@@ -1,0 +1,49 @@
+const appname = "eMart";
+const appversion = "Version 1.0.0";
+const credits = "@NCQ Devs";
+const email = "Email";
+const emailHint = "admin@admin.com";
+const password = "Password";
+const passwordHint = "********";
+const confirmPassword = "Confirm Password";
+const name = "Name";
+const nameHint = "NCQ Devs";
+const forgotPass = "Forgot Password?";
+const login = "Login";
+const signup = "Sign Up";
+const createNewAccount = "or, create a new account";
+const loginWith = "Login with";
+const privacyPolicy = "Privacy Policy";
+const termAndCond = "Terms and Conditions";
+const alreadyHaveAccount = "Already have an account?";
+
+// home strings
+const home = "Home",
+    categories = "Categories",
+    cart = "Cart",
+    account = "Account";
+
+// home screen strings
+const searchAnything = "Search anything...",
+    viewAll = "View All",
+    bestSelling = "Best Selling",
+    newArrivals = "New Arrivals",
+    topRated = "Top Rated",
+    featuredProducts = "Featured Products",
+    popularProducts = "Popular Products",
+    bestSellers = "Best Sellers",
+    todayDeals = "Today's Deals",
+    flashsales = "Flash Sales",
+    topSellers = "Top Sellers",
+    brand = "Brand",
+    topCategories = "Top Categories",
+    featuredCategories = "Featured Categories",
+    laptop = "Laptop",
+    desktop = "Desktop",
+    monitor = "Monitor",
+    storage = "Storage",
+    memory = "Memory",
+    graphicsCard = "Graphics Card",
+    peripherals = "Peripherals",
+    accessories = "Accessories",
+    networking = "Networking";
