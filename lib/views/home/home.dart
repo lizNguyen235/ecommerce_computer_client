@@ -3,9 +3,10 @@ import 'package:ecommerce_computer_client/controller/home_controller.dart';
 import 'package:ecommerce_computer_client/views/cart/cart_screen.dart';
 import 'package:ecommerce_computer_client/views/category/category_screen.dart';
 import 'package:ecommerce_computer_client/views/home/home_screen.dart';
-import 'package:ecommerce_computer_client/views/profile/profile_screen.dart';
+import 'package:ecommerce_computer_client/views/account/account_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:iconsax/iconsax.dart';
 
 class Home extends StatelessWidget {
   const Home({super.key});
@@ -16,17 +17,20 @@ class Home extends StatelessWidget {
     var controller = Get.put(HomeController());
 
     var navbarItem = [
-      BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-      BottomNavigationBarItem(icon: Icon(Icons.category), label: "Categories"),
-      BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: "Cart"),
-      BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+      BottomNavigationBarItem(icon: Icon(Iconsax.home), label: "Home"),
+      BottomNavigationBarItem(
+        icon: Icon(Iconsax.category),
+        label: "Categories",
+      ),
+      BottomNavigationBarItem(icon: Icon(Iconsax.shopping_cart), label: "Cart"),
+      BottomNavigationBarItem(icon: Icon(Iconsax.user), label: "Account"),
     ];
 
     var navBody = [
       HomeScreen(),
       CategoryScreen(),
       CartScreen(),
-      ProfileScreen(),
+      AccountScreen(),
     ];
 
     return Scaffold(

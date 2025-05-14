@@ -201,33 +201,6 @@ class _CartScreenState extends State<CartScreen> {
             ),
           ),
 
-          // Thông tin đơn hàng
-          Container(
-            padding: const EdgeInsets.all(12),
-            color: whiteColor,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Total',
-                  style: TextStyle(
-                    fontFamily: bold,
-                    fontSize: 18,
-                    color: darkFontGrey,
-                  ),
-                ),
-                Text(
-                  '\$${_totalPrice.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontFamily: bold,
-                    fontSize: 16,
-                    color: redColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
           // Nút thanh toán
           Container(
             margin: const EdgeInsets.all(12),
