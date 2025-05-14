@@ -1,5 +1,4 @@
 import 'package:ecommerce_computer_client/consts/consts.dart';
-import 'package:ecommerce_computer_client/views/category/item_details.dart';
 import 'package:ecommerce_computer_client/views/product/product_detail_screen.dart';
 import 'package:ecommerce_computer_client/widgets/bg_widget.dart';
 import 'package:flutter/material.dart';
