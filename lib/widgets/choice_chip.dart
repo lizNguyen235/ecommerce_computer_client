@@ -1,7 +1,6 @@
 import 'package:ecommerce_computer_client/consts/consts.dart';
 import 'package:ecommerce_computer_client/utils/helper_function.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get_connect/http/src/utils/utils.dart';
 
 class TChoiceChip extends StatelessWidget {
   const TChoiceChip({

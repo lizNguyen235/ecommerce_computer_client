@@ -1,7 +1,13 @@
 import 'package:ecommerce_computer_client/consts/consts.dart';
 import 'package:ecommerce_computer_client/consts/lists.dart';
+import 'package:ecommerce_computer_client/utils/colors.dart';
+import 'package:ecommerce_computer_client/views/brand/brand_screen.dart';
+import 'package:ecommerce_computer_client/views/product/all_product_screen.dart';
+import 'package:ecommerce_computer_client/views/product/product_cart_vertical.dart';
+import 'package:ecommerce_computer_client/widgets/custom_grid_layout.dart';
 import 'package:ecommerce_computer_client/widgets/home_buttons.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -10,7 +16,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      color: lightGrey,
+      color: TColors.light,
       width: context.screenHeight,
       height: context.screenHeight,
       child: SafeArea(
@@ -97,7 +103,7 @@ class HomeScreen extends StatelessWidget {
                             homeButtons(
                               icon: icBrands,
                               title: brand,
-                              onPress: () {},
+                              onPress: () => Get.to(const BrandScreen()),
                             ),
                             const SizedBox(width: 16),
                             homeButtons(
@@ -118,15 +124,24 @@ class HomeScreen extends StatelessWidget {
 
                     20.heightBox,
                     // New products
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child:
-                          "New products".text
-                              .color(darkFontGrey)
-                              .size(18)
-                              .fontFamily(semibold)
-                              .make(),
-                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        "New products".text
+                            .color(Colors.black)
+                            .size(18)
+                            .fontFamily(semibold)
+                            .make(),
+                        InkWell(
+                          child:
+                              "View all".text
+                                  .color(darkFontGrey)
+                                  .fontFamily(regular)
+                                  .make(),
+                          onTap: () => Get.to(const AllProductsScreen()),
+                        ),
+                      ],
+                    ).box.padding(const EdgeInsets.all(8)).make(),
 
                     10.heightBox,
                     // Featured categories list
@@ -135,34 +150,10 @@ class HomeScreen extends StatelessWidget {
                       child: Row(
                         children: List.generate(
                           6,
-                          (index) =>
-                              Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Image.asset(
-                                        imgP5,
-                                        width: 150,
-                                        fit: BoxFit.cover,
-                                      ),
-                                      10.heightBox,
-                                      "Laptop 4GB/64GB".text
-                                          .fontFamily(semibold)
-                                          .color(darkFontGrey)
-                                          .make(),
-                                      10.heightBox,
-                                      "\$600".text
-                                          .fontFamily(bold)
-                                          .color(redColor)
-                                          .size(16)
-                                          .make(),
-                                    ],
-                                  ).box.white.roundedSM
-                                  .margin(
-                                    const EdgeInsets.symmetric(horizontal: 4),
-                                  )
-                                  .padding(const EdgeInsets.all(8))
-                                  .make(),
+                          (index) => ProductCartVertical().marginOnly(
+                            left: index == 0 ? 0 : 6,
+                            right: 6,
+                          ),
                         ),
                       ),
                     ),
@@ -176,46 +167,34 @@ class HomeScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          bestSellers.text.white
-                              .fontFamily(bold)
-                              .size(18)
-                              .make(),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              "Best seller".text
+                                  .color(whiteColor)
+                                  .size(20)
+                                  .fontWeight(FontWeight.w600)
+                                  .make(),
+                              InkWell(
+                                child:
+                                    "View all".text
+                                        .color(whiteColor)
+                                        .fontFamily(regular)
+                                        .make(),
+                                onTap: () => Get.to(const AllProductsScreen()),
+                              ),
+                            ],
+                          ),
                           10.heightBox,
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: List.generate(
                                 6,
-                                (index) =>
-                                    Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Image.asset(
-                                              imgP5,
-                                              width: 150,
-                                              fit: BoxFit.cover,
-                                            ),
-                                            10.heightBox,
-                                            "Laptop 4GB/64GB".text
-                                                .fontFamily(semibold)
-                                                .color(darkFontGrey)
-                                                .make(),
-                                            10.heightBox,
-                                            "\$600".text
-                                                .fontFamily(bold)
-                                                .color(redColor)
-                                                .size(16)
-                                                .make(),
-                                          ],
-                                        ).box.white.roundedSM
-                                        .margin(
-                                          const EdgeInsets.symmetric(
-                                            horizontal: 4,
-                                          ),
-                                        )
-                                        .padding(const EdgeInsets.all(8))
-                                        .make(),
+                                (index) => ProductCartVertical().marginOnly(
+                                  left: index == 0 ? 0 : 6,
+                                  right: 6,
+                                ),
                               ),
                             ),
                           ),
@@ -224,56 +203,32 @@ class HomeScreen extends StatelessWidget {
                     ),
 
                     20.heightBox,
+
                     // New products
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child:
-                          "All products".text
-                              .color(darkFontGrey)
-                              .size(18)
-                              .fontFamily(semibold)
-                              .make(),
-                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        "All products".text
+                            .color(Colors.black)
+                            .size(18)
+                            .fontFamily(semibold)
+                            .make(),
+                        InkWell(
+                          child:
+                              "View all".text
+                                  .color(darkFontGrey)
+                                  .fontFamily(regular)
+                                  .make(),
+                          onTap: () => Get.to(const AllProductsScreen()),
+                        ),
+                      ],
+                    ).box.padding(const EdgeInsets.all(8)).make(),
 
                     10.heightBox,
                     // All products
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: 6,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 8,
-                        crossAxisSpacing: 8,
-                        mainAxisExtent: 300,
-                      ),
-                      itemBuilder: (context, index) {
-                        return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Image.asset(
-                                  imgP3,
-                                  width: 200,
-                                  height: 200,
-                                  fit: BoxFit.cover,
-                                ),
-                                const Spacer(),
-                                "Laptop 4GB/64GB".text
-                                    .fontFamily(semibold)
-                                    .color(darkFontGrey)
-                                    .make(),
-                                10.heightBox,
-                                "\$600".text
-                                    .fontFamily(bold)
-                                    .color(redColor)
-                                    .size(16)
-                                    .make(),
-                              ],
-                            ).box.white.roundedSM
-                            .margin(const EdgeInsets.symmetric(horizontal: 4))
-                            .padding(const EdgeInsets.all(8))
-                            .make();
-                      },
+                    CustomGridLayout(
+                      itemCount: 8,
+                      itemBuilder: (_, index) => ProductCartVertical(),
                     ),
                   ],
                 ),

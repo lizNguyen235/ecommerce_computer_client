@@ -1,230 +1,207 @@
+import 'package:ecommerce_computer_client/consts/colors.dart';
+import 'package:ecommerce_computer_client/consts/styles.dart';
+import 'package:ecommerce_computer_client/utils/colors.dart';
+import 'package:ecommerce_computer_client/utils/sizes.dart';
+import 'package:ecommerce_computer_client/views/checkout/checkout_screen.dart';
+import 'package:ecommerce_computer_client/widgets/appbar.dart';
+import 'package:ecommerce_computer_client/widgets/circular_icon.dart';
+import 'package:ecommerce_computer_client/widgets/rounded_image.dart';
 import 'package:flutter/material.dart';
-import 'package:ecommerce_computer_client/consts/consts.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:get/get.dart';
+import 'package:iconsax/iconsax.dart';
 
-class CartItem {
-  final String name;
-  final String imagePath;
-  int quantity;
-  final double price;
-
-  CartItem({
-    required this.name,
-    required this.imagePath,
-    required this.quantity,
-    required this.price,
-  });
-
-  double get total => price * quantity;
-}
-
-class CartScreen extends StatefulWidget {
-  const CartScreen({Key? key}) : super(key: key);
-
-  @override
-  State<CartScreen> createState() => _CartScreenState();
-}
-
-class _CartScreenState extends State<CartScreen> {
-  // Dữ liệu giỏ hàng giả lập (chỉ máy tính và linh kiện)
-  final List<CartItem> _items = [
-    CartItem(
-      name: 'MacBook Air 13" M1',
-      imagePath: imgP3,
-      quantity: 1,
-      price: 999.0,
-    ),
-    CartItem(
-      name: 'Monitor Dell 24 inch',
-      imagePath: imgP2,
-      quantity: 1,
-      price: 300.0,
-    ),
-    CartItem(
-      name: 'Keyboard ASUS ROG',
-      imagePath: imgP1,
-      quantity: 1,
-      price: 150.0,
-    ),
-  ];
-
-  double get _totalPrice => _items.fold(0.0, (sum, item) => sum + item.total);
-
-  void _removeItem(int index) {
-    setState(() {
-      _items.removeAt(index);
-    });
-  }
-
-  void _changeQuantity(int index, int delta) {
-    setState(() {
-      final newQty = _items[index].quantity + delta;
-      if (newQty > 0) _items[index].quantity = newQty;
-    });
-  }
+class CartScreen extends StatelessWidget {
+  const CartScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: whiteColor,
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 248, 113, 2),
         title: Text(
-          'My Cart',
-          style: TextStyle(fontFamily: bold, color: whiteColor),
+          'Cart',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+          ),
         ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.all(12),
-              itemCount: _items.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final item = _items[index];
-                return Slidable(
-                  key: ValueKey(item.name),
-                  endActionPane: ActionPane(
-                    motion: const ScrollMotion(),
+      body: Padding(
+        padding: const EdgeInsets.all(Sizes.defaultSpace),
+        child: ListView.separated(
+          shrinkWrap: true,
+          itemCount: 6,
+          separatorBuilder:
+              (_, __) => const SizedBox(height: Sizes.spaceBtwSections),
+          itemBuilder:
+              (context, index) => Column(
+                children: [
+                  /// Product Image, Title, Price, Variant
+                  Row(
                     children: [
-                      SlidableAction(
-                        onPressed: (_) => _removeItem(index),
-                        backgroundColor: Colors.redAccent,
-                        foregroundColor: Colors.white,
-                        icon: Icons.delete,
-                        label: 'Delete',
+                      /// Product Image
+                      RoundedImage(
+                        imageUrl: 'assets/images/user.png',
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                        padding: EdgeInsets.all(Sizes.sm),
+                        backgroundColor: Colors.grey.shade200,
                       ),
-                    ],
-                  ),
-                  child: Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                      const SizedBox(width: Sizes.spaceBtwItems),
+
+                      /// Title, Price, Variant
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Hình ảnh sản phẩm từ assets
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.asset(
-                              item.imagePath,
-                              width: 80,
-                              height: 80,
-                              fit: BoxFit.cover,
+                          /// Brand name
+                          Row(
+                            children: [
+                              Text(
+                                'Dell',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontFamily: regular,
+                                  color: darkFontGrey,
+                                ),
+                              ),
+                              const SizedBox(width: Sizes.spaceBtwItems / 2),
+                              Icon(
+                                Iconsax.verify5,
+                                color: Colors.blue,
+                                size: 14,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+
+                          /// Product name
+                          Text(
+                            'Dell Inspiron 15',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontFamily: bold,
+                              color: Colors.black,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          // Cột chứa Tên, Giá, và Nút tăng giảm số lượng
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          const SizedBox(height: 4),
+
+                          /// Variants
+                          Text.rich(
+                            TextSpan(
                               children: [
-                                Text(
-                                  item.name,
+                                TextSpan(
+                                  text: 'Color ',
                                   style: TextStyle(
-                                    fontFamily: semibold,
-                                    fontSize: 16,
+                                    fontSize: 12,
+                                    fontFamily: regular,
                                     color: darkFontGrey,
                                   ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  '\$${item.price.toStringAsFixed(2)}',
+                                TextSpan(
+                                  text: 'Black ',
                                   style: TextStyle(
-                                    fontFamily: bold,
-                                    fontSize: 14,
-                                    color: redColor,
+                                    fontSize: 12,
+                                    fontFamily: semibold,
+                                    color: Colors.black,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.remove_circle_outline,
-                                        size: 20,
-                                      ),
-                                      color: redColor,
-                                      onPressed:
-                                          () => _changeQuantity(index, -1),
-                                    ),
-                                    Text(
-                                      '${item.quantity}',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: darkFontGrey,
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.add_circle_outline,
-                                        size: 20,
-                                      ),
-                                      color: Colors.green,
-                                      onPressed:
-                                          () => _changeQuantity(index, 1),
-                                    ),
-                                  ],
+
+                                TextSpan(
+                                  text: 'Storage ',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: regular,
+                                    color: darkFontGrey,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: '512GB',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: semibold,
+                                    color: Colors.black,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          // Nút xóa
-                          IconButton(
-                            style: IconButton.styleFrom(
-                              backgroundColor: Colors.redAccent.withOpacity(
-                                0.2,
-                              ), // Màu nền nhạt hơn
-                              padding: const EdgeInsets.all(12), // Padding tổng
+                          const SizedBox(height: 8),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+
+                  /// Quantity and Price
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const SizedBox(width: 76),
+                          CircularIcon(
+                            icon: Iconsax.minus,
+                            width: 32,
+                            height: 32,
+                            size: Sizes.md,
+                            color: darkFontGrey,
+                            backgroundColor: Colors.grey.shade300,
+                            onPressed: () {},
+                          ),
+                          const SizedBox(width: Sizes.spaceBtwItems),
+                          Text(
+                            '2',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontFamily: semibold,
+                              color: Colors.black,
                             ),
-                            icon: const Icon(
-                              Icons.delete_outline,
-                              color: Colors.redAccent, // Icon giữ màu đậm
-                              size: 24,
-                            ),
-                            onPressed: () => _removeItem(index),
+                          ),
+                          const SizedBox(width: Sizes.spaceBtwItems),
+                          CircularIcon(
+                            icon: Iconsax.add,
+                            width: 32,
+                            height: 32,
+                            size: Sizes.md,
+                            color: whiteColor,
+                            backgroundColor: Colors.blue,
+                            onPressed: () {},
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
 
-          // Nút thanh toán
-          Container(
-            margin: const EdgeInsets.all(12),
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade500,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                      /// Price
+                      Text(
+                        '\$256',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontFamily: bold,
+                          color: Colors.black,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              child: Text(
-                'Checkout (\$${_totalPrice.toStringAsFixed(2)})',
-                style: TextStyle(
-                  fontFamily: bold,
-                  fontSize: 16,
-                  color: whiteColor,
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
+      ),
+      bottomNavigationBar: ElevatedButton(
+        onPressed: () => Get.to(() => CheckoutScreen()),
+        style: ElevatedButton.styleFrom(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          backgroundColor: TColors.primary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: Text(
+          'Checkout \$256.0',
+          style: TextStyle(fontSize: 16, fontFamily: bold, color: whiteColor),
+        ),
       ),
     );
   }
