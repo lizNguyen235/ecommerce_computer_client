@@ -1,8 +1,8 @@
+import 'package:ecommerce_computer_client/consts/consts.dart';
+import 'package:ecommerce_computer_client/views/splash_screen/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'views/home/home_page.dart';
 // import các màn hình khác nếu cần
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,8 +16,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'E-Commerce App',
+    // Sử dụng GetMaterialApp thay vì MaterialApp để chuyển từ splash sang login or home
+    return GetMaterialApp(
+      title: appname,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
       home: initialScreen,

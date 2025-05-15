@@ -1,184 +1,231 @@
 import 'package:flutter/material.dart';
-import '../home/home_page.dart'; // Đường dẫn đến class Product của bạn
+import 'package:ecommerce_computer_client/consts/consts.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+
+class CartItem {
+  final String name;
+  final String imagePath;
+  int quantity;
+  final double price;
+
+  CartItem({
+    required this.name,
+    required this.imagePath,
+    required this.quantity,
+    required this.price,
+  });
+
+  double get total => price * quantity;
+}
 
 class CartScreen extends StatefulWidget {
-  final List<Product> cartItems;
-  final bool isDarkMode;
-
-  const CartScreen({Key? key, required this.cartItems, this.isDarkMode = false})
-    : super(key: key);
+  const CartScreen({Key? key}) : super(key: key);
 
   @override
   State<CartScreen> createState() => _CartScreenState();
 }
 
 class _CartScreenState extends State<CartScreen> {
-  late List<Product> _cartItems;
+  // Dữ liệu giỏ hàng giả lập (chỉ máy tính và linh kiện)
+  final List<CartItem> _items = [
+    CartItem(
+      name: 'MacBook Air 13" M1',
+      imagePath: imgP3,
+      quantity: 1,
+      price: 999.0,
+    ),
+    CartItem(
+      name: 'Monitor Dell 24 inch',
+      imagePath: imgP2,
+      quantity: 1,
+      price: 300.0,
+    ),
+    CartItem(
+      name: 'Keyboard ASUS ROG',
+      imagePath: imgP1,
+      quantity: 1,
+      price: 150.0,
+    ),
+  ];
 
-  @override
-  void initState() {
-    super.initState();
-    _cartItems = List.from(widget.cartItems);
+  double get _totalPrice => _items.fold(0.0, (sum, item) => sum + item.total);
+
+  void _removeItem(int index) {
+    setState(() {
+      _items.removeAt(index);
+    });
   }
 
-  void _removeFromCart(Product product) {
-    setState(() => _cartItems.remove(product));
+  void _changeQuantity(int index, int delta) {
+    setState(() {
+      final newQty = _items[index].quantity + delta;
+      if (newQty > 0) _items[index].quantity = newQty;
+    });
   }
-
-  double get totalPrice =>
-      _cartItems.fold(0, (sum, item) => sum + item.finalPrice);
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = widget.isDarkMode ? Colors.grey[900]! : Colors.grey[100]!;
-    final appBarColor = widget.isDarkMode ? Colors.grey[850]! : Colors.white;
-    final cardColor = widget.isDarkMode ? Colors.grey[800]! : Colors.white;
-    final textColor = widget.isDarkMode ? Colors.white : Colors.black87;
-    final subtitleColor =
-        widget.isDarkMode ? Colors.grey[400]! : Colors.grey[700]!;
-    final priceColor =
-        widget.isDarkMode ? Colors.tealAccent[200]! : Colors.teal[700]!;
-    final iconColor = widget.isDarkMode ? Colors.red[300]! : Colors.redAccent;
-
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        backgroundColor: appBarColor,
-        iconTheme: IconThemeData(color: textColor),
+        backgroundColor: const Color.fromARGB(255, 248, 113, 2),
         title: Text(
-          'Giỏ hàng',
-          style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+          'My Cart',
+          style: TextStyle(fontFamily: bold, color: whiteColor),
         ),
-        centerTitle: true,
-        elevation: 1,
       ),
-      body:
-          _cartItems.isEmpty
-              ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.shopping_bag_outlined,
-                      size: 80,
-                      color: subtitleColor,
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.all(12),
+              itemCount: _items.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final item = _items[index];
+                return Slidable(
+                  key: ValueKey(item.name),
+                  endActionPane: ActionPane(
+                    motion: const ScrollMotion(),
+                    children: [
+                      SlidableAction(
+                        onPressed: (_) => _removeItem(index),
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.white,
+                        icon: Icons.delete,
+                        label: 'Delete',
+                      ),
+                    ],
+                  ),
+                  child: Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Giỏ hàng trống',
-                      style: TextStyle(fontSize: 18, color: subtitleColor),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Hình ảnh sản phẩm từ assets
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.asset(
+                              item.imagePath,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Cột chứa Tên, Giá, và Nút tăng giảm số lượng
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.name,
+                                  style: TextStyle(
+                                    fontFamily: semibold,
+                                    fontSize: 16,
+                                    color: darkFontGrey,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  '\$${item.price.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontFamily: bold,
+                                    fontSize: 14,
+                                    color: redColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.remove_circle_outline,
+                                        size: 20,
+                                      ),
+                                      color: redColor,
+                                      onPressed:
+                                          () => _changeQuantity(index, -1),
+                                    ),
+                                    Text(
+                                      '${item.quantity}',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: darkFontGrey,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.add_circle_outline,
+                                        size: 20,
+                                      ),
+                                      color: Colors.green,
+                                      onPressed:
+                                          () => _changeQuantity(index, 1),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Nút xóa
+                          IconButton(
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.redAccent.withOpacity(
+                                0.2,
+                              ), // Màu nền nhạt hơn
+                              padding: const EdgeInsets.all(12), // Padding tổng
+                            ),
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.redAccent, // Icon giữ màu đậm
+                              size: 24,
+                            ),
+                            onPressed: () => _removeItem(index),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // Nút thanh toán
+          Container(
+            margin: const EdgeInsets.all(12),
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade500,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              )
-              : Column(
-                children: [
-                  Expanded(
-                    child: ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _cartItems.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final product = _cartItems[index];
-                        return Card(
-                          color: cardColor,
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            leading: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                product.imageUrl,
-                                width: 56,
-                                height: 56,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            title: Text(
-                              product.name,
-                              style: TextStyle(
-                                color: textColor,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            subtitle: Text(
-                              '${product.finalPrice.toStringAsFixed(0)}đ',
-                              style: TextStyle(
-                                color: priceColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            trailing: IconButton(
-                              icon: Icon(
-                                Icons.delete_outline,
-                                color: iconColor,
-                              ),
-                              onPressed: () => _removeFromCart(product),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    color: cardColor,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Tổng cộng',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
-                          ),
-                        ),
-                        Text(
-                          '${totalPrice.toStringAsFixed(0)}đ',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: priceColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Thanh toán thành công!'),
-                          ),
-                        );
-                        setState(() => _cartItems.clear());
-                      },
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white, backgroundColor: priceColor,
-                        elevation: 2,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Thanh toán',
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ),
-                  ),
-                ],
               ),
+              child: Text(
+                'Checkout (\$${_totalPrice.toStringAsFixed(2)})',
+                style: TextStyle(
+                  fontFamily: bold,
+                  fontSize: 16,
+                  color: whiteColor,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
