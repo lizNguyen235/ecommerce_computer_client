@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "723125597778",
+    "project_id": "ecommerapp-a3700",
+    "storage_bucket": "ecommerapp-a3700.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:723125597778:android:b83aa8fc2e8944a1b0d18b",
+        "android_client_info": {
+          "package_name": "com.example.ecommerce_computer_client"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBP3sSb2oTXASCsxhfGVTOLByQsYmN22VI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

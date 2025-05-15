@@ -149,8 +149,7 @@ class ProductDetailScreen extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context, product),
                   style: ElevatedButton.styleFrom(
-                    primary: buttonColor,
-                    onPrimary: Colors.white,
+                    foregroundColor: Colors.white, backgroundColor: buttonColor,
                     elevation: 2,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
