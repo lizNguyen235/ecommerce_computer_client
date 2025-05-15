@@ -1,8 +1,11 @@
 import 'package:ecommerce_computer_client/consts/consts.dart';
+import 'package:ecommerce_computer_client/views/home/home.dart';
 import 'package:ecommerce_computer_client/views/splash_screen/splash_screen.dart';
 import 'package:flutter/material.dart';
-import 'views/home/home_page.dart';
 // import các màn hình khác nếu cần
+import 'package:firebase_core/firebase_core.dart';
+import 'package:get/get_navigation/src/root/get_material_app.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,8 +14,8 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  final Widget initialScreen =
-      HomeScreen(); // ← Thay đổi tại đây để test screen khác
+   //final Widget initialScreen = Home(); // ← Thay đổi tại đây để test screen khác
+  final Widget initialScreen = SplashScreen();
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +23,15 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       title: appname,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+      theme: ThemeData(
+        scaffoldBackgroundColor: Colors.transparent,
+        appBarTheme: const AppBarTheme(
+          iconTheme: IconThemeData(color: darkFontGrey),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        fontFamily: regular,
+      ),
       home: initialScreen,
     );
   }

@@ -1,7 +1,8 @@
 import 'package:ecommerce_computer_client/views/home/home.dart';
 import 'package:flutter/material.dart';
-import '../login/register.dart';
-
+import '../../core/service/AuthService.dart';
+import '../login/register.dart'; // Assuming RegisterDialog is in this file
+import 'package:firebase_auth/firebase_auth.dart'; // Import for FirebaseAuthException
 class LoginDialog extends StatefulWidget {
   const LoginDialog({super.key});
 
@@ -13,21 +14,166 @@ class _LoginDialogState extends State<LoginDialog> {
   final _formKey = GlobalKey<FormState>();
   bool _obscure = true;
 
-  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController(); // Changed from _usernameController
   final TextEditingController _passwordController = TextEditingController();
 
-  void _submitLogin() {
+  // Instantiate the AuthService
+  final AuthService _authService = AuthService();
+
+  // State variables for loading and error
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  Future<void> _submitLogin() async {
+    // Clear previous error message
+    setState(() {
+      _errorMessage = null;
+    });
+
     if (_formKey.currentState!.validate()) {
-      // TODO: Login logic
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Logging in...")));
+      // Form is valid, show loading and attempt login
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        // Call the sign-in method from AuthService
+        User? user = await _authService.signInWithEmailPassword(
+          _emailController.text.trim(), // Use email controller
+          _passwordController.text,
+        );
+
+        // Login successful (AuthService returns User if successful)
+        if (user != null) {
+          print("User logged in: ${user.uid}");
+          // Navigate to Home and remove all previous routes
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const Home()),
+                (route) => false, // Remove all routes below Home
+          );
+        } else {
+          // This case is less common with signInWithEmailAndPassword as it usually throws an exception,
+          // but handling it ensures robustness.
+          setState(() {
+            _errorMessage = 'Đăng nhập không thành công (lỗi không xác định).';
+          });
+        }
+
+      } on FirebaseAuthException catch (e) {
+        // Handle specific Firebase Auth errors
+        String message;
+        if (e.code == 'user-not-found') {
+          message = 'Không tìm thấy người dùng cho email này.';
+        } else if (e.code == 'wrong-password') {
+          message = 'Sai mật khẩu.';
+        } else if (e.code == 'invalid-email') {
+          message = 'Định dạng email không hợp lệ.';
+        } else if (e.code == 'user-disabled') {
+          message = 'Tài khoản người dùng đã bị vô hiệu hóa.';
+        }
+        // Add other specific error codes if needed
+        else {
+          message = 'Đã xảy ra lỗi xác thực: ${e.message}';
+        }
+        print("Firebase Auth Error during login: ${e.code}");
+        setState(() {
+          _errorMessage = message;
+        });
+
+      } catch (e) {
+        // Handle any other potential errors (network issues, etc.)
+        print("General Error during login: $e");
+        setState(() {
+          _errorMessage = 'Đã xảy ra lỗi không xác định: $e';
+        });
+      } finally {
+        // Always stop loading after the attempt
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  // --- Phương thức xử lý quên mật khẩu ---
+  Future<void> _forgotPassword() async {
+    // Lấy email từ trường nhập email.
+    String email = _emailController.text.trim();
+
+    // Kiểm tra xem email có rỗng không
+    if (email.isEmpty) {
+      // Hiển thị thông báo yêu cầu nhập email
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Vui lòng nhập địa chỉ email của bạn.")),
+      );
+      return; // Dừng hàm
+    }
+
+    setState(() {
+      _isLoading = true; // Bật loading indicator
+      _errorMessage = null; // Xóa lỗi cũ
+    });
+
+    try {
+      // Gọi phương thức gửi email reset mật khẩu từ AuthService
+      await _authService.sendPasswordResetEmail(email);
+
+      // Nếu thành công, hiển thị thông báo cho người dùng
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Link đặt lại mật khẩu đã được gửi tới ${email}. Vui lòng kiểm tra hòm thư.")),
+      );
+      print("Password reset email sent to $email");
+
+    } on FirebaseAuthException catch (e) {
+      // Xử lý các lỗi cụ thể từ Firebase Auth khi gửi email reset
+      String message;
+      if (e.code == 'user-not-found') {
+        message = 'Không tìm thấy người dùng với email này.';
+      } else if (e.code == 'invalid-email') {
+        message = 'Định dạng email không hợp lệ.';
+      }
+      // Thêm các lỗi khác nếu cần (ví dụ: 'auth/missing-email')
+      else {
+        message = 'Đã xảy ra lỗi khi gửi email đặt lại mật khẩu: ${e.message}';
+      }
+      print("Firebase Auth Error sending reset email: ${e.code}");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+      setState(() {
+        _errorMessage = message; // Tùy chọn: cũng hiển thị lỗi dưới form nếu muốn
+      });
+
+    } catch (e) {
+      // Xử lý các lỗi khác
+      print("General Error sending reset email: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Đã xảy ra lỗi không xác định: $e')),
+      );
+      setState(() {
+        _errorMessage = 'Đã xảy ra lỗi không xác định: $e'; // Tùy chọn: cũng hiển thị lỗi dưới form
+      });
+    } finally {
+      // Luôn dừng trạng thái loading
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    // Dispose controllers
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Removed AppBar as it's a fullscreen dialog/page simulation
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -72,21 +218,45 @@ class _LoginDialogState extends State<LoginDialog> {
                         ),
                         const SizedBox(height: 24),
 
+                        // Email Field (formerly Username)
                         _inputField(
-                          controller: _usernameController,
-                          label: "Username",
-                          hint: "Enter your username",
-                          icon: Icons.person,
+                          controller: _emailController,
+                          label: "Email", // Changed label
+                          hint: "Enter your email", // Changed hint
+                          icon: Icons.email, // Changed icon
                           obscure: false,
+                          keyboardType: TextInputType.emailAddress, // Added keyboard type
+                          validator: (value) { // Added specific email validator
+                            if (value == null || value.trim().isEmpty) {
+                              return "Email cannot be empty";
+                            }
+                            // Optional: Basic email format validation (Firebase Auth will validate more strictly)
+                            if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+                              // return "Please enter a valid email format";
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 20),
 
+                        // Password Field
                         _inputField(
                           controller: _passwordController,
                           label: "Password",
                           hint: "Enter your password",
                           icon: Icons.lock,
                           obscure: _obscure,
+                          keyboardType: TextInputType.text, // Added keyboard type
+                          validator: (value) { // Added password validator
+                            if (value == null || value.trim().isEmpty) {
+                              return "Password cannot be empty";
+                            }
+                            // Optional: Add minimum length validation
+                            // if (value.length < 6) {
+                            //   return "Password must be at least 6 characters";
+                            // }
+                            return null;
+                          },
                           suffix: IconButton(
                             icon: Icon(
                               _obscure
@@ -104,13 +274,25 @@ class _LoginDialogState extends State<LoginDialog> {
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
-                            onPressed: () {},
+                            onPressed: _forgotPassword,
                             child: const Text(
                               "Forgot password?",
                               style: TextStyle(color: Colors.black87),
                             ),
                           ),
                         ),
+
+                        // Display error message if any
+                        if (_errorMessage != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 15.0),
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(color: Colors.red, fontSize: 14),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+
 
                         const SizedBox(height: 10),
                         Container(
@@ -122,8 +304,10 @@ class _LoginDialogState extends State<LoginDialog> {
                             ),
                             borderRadius: BorderRadius.circular(30),
                           ),
-                          child: ElevatedButton(
-                            onPressed: _submitLogin,
+                          child: _isLoading // Conditionally show loading or button
+                              ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                              : ElevatedButton(
+                            onPressed: _submitLogin, // Call the login method
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.transparent,
                               shadowColor: Colors.transparent,
@@ -133,7 +317,7 @@ class _LoginDialogState extends State<LoginDialog> {
                             ),
                             child: const Text(
                               "LOGIN",
-                              style: TextStyle(color: Colors.white),
+                              style: TextStyle(color: Colors.white, fontSize: 18), // Added font size
                             ),
                           ),
                         ),
@@ -145,6 +329,7 @@ class _LoginDialogState extends State<LoginDialog> {
                         ),
                         TextButton(
                           onPressed: () {
+                            // Navigate to Register page
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -166,13 +351,14 @@ class _LoginDialogState extends State<LoginDialog> {
                 ),
 
                 // ⬅ Nút quay về home dưới dialog
+                const SizedBox(height: 20), // Add spacing
                 IconButton(
                   icon: const Icon(Icons.home, size: 28, color: Colors.black),
                   onPressed: () {
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(builder: (_) => const Home()),
-                      (route) => false,
+                          (route) => false,
                     );
                   },
                 ),
@@ -191,6 +377,7 @@ class _LoginDialogState extends State<LoginDialog> {
     );
   }
 
+  // Helper method for input fields
   Widget _inputField({
     required String label,
     required String hint,
@@ -198,12 +385,15 @@ class _LoginDialogState extends State<LoginDialog> {
     required bool obscure,
     Widget? suffix,
     required TextEditingController controller,
+    TextInputType keyboardType = TextInputType.text, // Added keyboard type with default
+    String? Function(String?)? validator, // Made validator optional
   }) {
     return TextFormField(
       controller: controller,
       obscureText: obscure,
+      keyboardType: keyboardType, // Use provided keyboard type
       style: const TextStyle(fontSize: 14, color: Colors.black87),
-      validator: (value) {
+      validator: validator ?? (value) { // Use provided validator or default (non-empty)
         if (value == null || value.trim().isEmpty) {
           return "$label cannot be empty";
         }
