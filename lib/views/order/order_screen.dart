@@ -1,10 +1,6 @@
-import 'package:ecommerce_computer_client/consts/consts.dart';
-import 'package:ecommerce_computer_client/utils/colors.dart';
 import 'package:ecommerce_computer_client/utils/sizes.dart';
 import 'package:ecommerce_computer_client/views/order/components/order_list_item.dart';
-import 'package:ecommerce_computer_client/widgets/rounded_container.dart';
 import 'package:flutter/material.dart';
-import 'package:iconsax/iconsax.dart';
 
 class OrderScreen extends StatelessWidget {
   const OrderScreen({super.key});

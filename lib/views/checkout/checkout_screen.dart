@@ -1,14 +1,11 @@
-import 'package:ecommerce_computer_client/consts/colors.dart';
 import 'package:ecommerce_computer_client/consts/consts.dart';
 import 'package:ecommerce_computer_client/utils/colors.dart';
 import 'package:ecommerce_computer_client/utils/sizes.dart';
-import 'package:ecommerce_computer_client/views/home/home_screen.dart';
 import 'package:ecommerce_computer_client/views/success/success_screen.dart';
 import 'package:ecommerce_computer_client/widgets/rounded_container.dart';
 import 'package:ecommerce_computer_client/widgets/rounded_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/instance_manager.dart';
 import 'package:iconsax/iconsax.dart';
 
 class CheckoutScreen extends StatelessWidget {
