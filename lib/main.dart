@@ -21,7 +21,15 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       title: appname,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+      theme: ThemeData(
+        scaffoldBackgroundColor: Colors.transparent,
+        appBarTheme: const AppBarTheme(
+          iconTheme: IconThemeData(color: darkFontGrey),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        fontFamily: regular,
+      ),
       home: initialScreen,
     );
   }

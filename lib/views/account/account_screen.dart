@@ -1,5 +1,6 @@
 import 'package:ecommerce_computer_client/consts/colors.dart';
 import 'package:ecommerce_computer_client/consts/styles.dart';
+import 'package:ecommerce_computer_client/core/service/AuthService.dart';
 import 'package:ecommerce_computer_client/utils/sizes.dart';
 import 'package:ecommerce_computer_client/views/address/address_screen.dart';
 import 'package:ecommerce_computer_client/views/cart/cart_screen.dart';
@@ -11,8 +12,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 
+import '../login/change_password.dart';
+
 class AccountScreen extends StatelessWidget {
-  const AccountScreen({super.key});
+  final  _auth = AuthService();
+  AccountScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -130,6 +134,10 @@ class AccountScreen extends StatelessWidget {
                     title: 'Change Password',
                     subtitle: 'Update your password',
                     trailing: Icon(Iconsax.arrow_circle_right, size: 26),
+                    onTap: () {
+                      // Handle change password action
+                      Get.to(() => ChangePasswordPage());
+                    },
                   ),
                   SizedBox(height: Sizes.spaceBtwSections),
 
@@ -160,7 +168,10 @@ class AccountScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        _auth.signOut();
+                        Get.offAllNamed('/Home');
+                      },
                       style: OutlinedButton.styleFrom(
                         padding: EdgeInsets.symmetric(vertical: Sizes.md),
                         shape: RoundedRectangleBorder(
