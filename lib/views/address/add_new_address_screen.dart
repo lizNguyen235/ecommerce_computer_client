@@ -3,7 +3,6 @@ import 'package:ecommerce_computer_client/utils/colors.dart';
 import 'package:ecommerce_computer_client/utils/sizes.dart';
 import 'package:ecommerce_computer_client/widgets/appbar.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 
 class AddNewAddressScreen extends StatelessWidget {

@@ -4,7 +4,6 @@ import 'package:ecommerce_computer_client/widgets/appbar.dart';
 import 'package:ecommerce_computer_client/widgets/circular_image.dart';
 import 'package:ecommerce_computer_client/widgets/profile_menu.dart';
 import 'package:flutter/material.dart';
-import 'package:iconsax/iconsax.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -46,7 +45,7 @@ class ProfileScreen extends StatelessWidget {
                       child: Text(
                         'Change Profile Picture',
                         style: TextStyle(
-                          color: Colors.black,
+                          color: darkFontGrey,
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -129,14 +128,6 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: Sizes.spaceBtwItems),
-              const Text(
-                'Version 1.0.0',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
             ],
           ),
         ),
