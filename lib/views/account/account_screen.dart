@@ -3,8 +3,9 @@ import 'package:ecommerce_computer_client/consts/styles.dart';
 import 'package:ecommerce_computer_client/core/service/AuthService.dart';
 import 'package:ecommerce_computer_client/utils/sizes.dart';
 import 'package:ecommerce_computer_client/views/address/address_screen.dart';
+import 'package:ecommerce_computer_client/views/cart/cart_screen.dart';
+import 'package:ecommerce_computer_client/views/order/order_screen.dart';
 import 'package:ecommerce_computer_client/views/profile/profile_screen.dart';
-import 'package:ecommerce_computer_client/widgets/appbar.dart';
 import 'package:ecommerce_computer_client/widgets/primary_header_container.dart';
 import 'package:ecommerce_computer_client/widgets/setting_menu_tile.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +29,7 @@ class AccountScreen extends StatelessWidget {
             TPrimaryHeaderContainer(
               child: Column(
                 children: [
-                  TAppBar(
+                  AppBar(
                     title: Text(
                       'Account',
                       style: TextStyle(
@@ -37,6 +38,9 @@ class AccountScreen extends StatelessWidget {
                         color: Colors.white,
                       ),
                     ),
+                    centerTitle: true,
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
                   ),
 
                   /// - User Profile card
@@ -104,12 +108,14 @@ class AccountScreen extends StatelessWidget {
                     title: 'My Cart',
                     subtitle: 'Add, remove products and move to checkout',
                     trailing: Icon(Iconsax.arrow_circle_right, size: 26),
+                    onTap: () => Get.to(() => CartScreen()),
                   ),
                   SettingMenuTile(
                     icon: Iconsax.bag_tick,
                     title: 'My Orders',
                     subtitle: 'In-progress, completed and cancelled orders',
                     trailing: Icon(Iconsax.arrow_circle_right, size: 26),
+                    onTap: () => Get.to(() => OrderScreen()),
                   ),
                   SettingMenuTile(
                     icon: Iconsax.discount_shape,

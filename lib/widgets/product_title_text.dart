@@ -1,5 +1,4 @@
 import 'package:ecommerce_computer_client/consts/consts.dart';
-import 'package:ecommerce_computer_client/consts/styles.dart';
 import 'package:flutter/material.dart';
 
 class ProductTitleText extends StatelessWidget {
@@ -26,7 +25,7 @@ class ProductTitleText extends StatelessWidget {
       style: TextStyle(
         fontSize: smallSize ? 14 : 16,
         fontFamily: semibold,
-        color: darkFontGrey,
+        color: Colors.black,
       ),
     );
   }

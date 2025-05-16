@@ -1,11 +1,10 @@
 import 'package:ecommerce_computer_client/consts/consts.dart';
+import 'package:ecommerce_computer_client/firebase_options.dart';
 import 'package:ecommerce_computer_client/views/home/home.dart';
-import 'package:ecommerce_computer_client/views/splash_screen/splash_screen.dart';
-import 'package:flutter/material.dart';
-// import các màn hình khác nếu cần
 import 'package:firebase_core/firebase_core.dart';
-import 'package:get/get_navigation/src/root/get_material_app.dart';
-import 'firebase_options.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+// import các màn hình khác nếu cần
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,8 +13,7 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-   //final Widget initialScreen = Home(); // ← Thay đổi tại đây để test screen khác
-  final Widget initialScreen = SplashScreen();
+  final Widget initialScreen = Home(); // ← Thay đổi tại đây để test screen khác
 
   @override
   Widget build(BuildContext context) {
