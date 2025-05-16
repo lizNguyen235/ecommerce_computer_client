@@ -27,7 +27,7 @@ class UserService {
         'email': email, // Lưu email (cũng có trong Auth nhưng tiện truy vấn)
         'fullName': fullName,
         'role': 'customer', // Mặc định là 'customer', có thể thay đổi sau
-        'shippingAddress': shippingAddress,
+        'shippingAddress': [shippingAddress], // Danh sách địa chỉ giao hàng
         'createdAt': Timestamp.now(), // Thời gian tạo hồ sơ (tùy chọn)
         // Thêm các trường khác (ví dụ: số điện thoại, avatarUrl...)
       });
