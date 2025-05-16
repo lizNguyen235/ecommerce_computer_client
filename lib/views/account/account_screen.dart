@@ -12,10 +12,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 
+import '../../core/service/UserService.dart';
 import '../login/change_password.dart';
+import '../support/support_chat_screen.dart';
 
 class AccountScreen extends StatelessWidget {
   final  _auth = AuthService();
+  final user = UserService();
   AccountScreen({super.key});
 
   @override
@@ -139,6 +142,17 @@ class AccountScreen extends StatelessWidget {
                       Get.to(() => ChangePasswordPage());
                     },
                   ),
+                  if(user.getCurrentUserRole() == 'admin')
+                    SettingMenuTile(
+                      icon: Iconsax.shield,
+                      title: 'Admin Panel',
+                      subtitle: 'Manage products, orders and users',
+                      trailing: Icon(Iconsax.arrow_circle_right, size: 26),
+                      onTap: () {
+                        // Handle admin panel action
+                        Get.toNamed('/admin');
+                      },
+                    ),
                   SizedBox(height: Sizes.spaceBtwSections),
 
                   Text(
@@ -146,6 +160,16 @@ class AccountScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                   SizedBox(height: Sizes.spaceBtwItems),
+                  SettingMenuTile(
+                    icon: Iconsax.support,
+                    title: 'Support Center',
+                    subtitle: 'Chat with us for any help',
+                    trailing: Icon(Iconsax.arrow_circle_right, size: 26),
+                    onTap: () {
+                      // Handle support center action
+                      Get.to(() => const SupportChatPage());
+                    },
+                  ),
                   SettingMenuTile(
                     icon: Iconsax.language_circle,
                     title: 'Language',

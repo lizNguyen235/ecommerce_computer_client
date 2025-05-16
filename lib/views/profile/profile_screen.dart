@@ -1,4 +1,6 @@
 import 'package:ecommerce_computer_client/consts/consts.dart';
+import 'package:ecommerce_computer_client/core/service/AuthService.dart';
+import 'package:ecommerce_computer_client/core/service/UserService.dart';
 import 'package:ecommerce_computer_client/utils/sizes.dart';
 import 'package:ecommerce_computer_client/widgets/appbar.dart';
 import 'package:ecommerce_computer_client/widgets/circular_image.dart';
@@ -7,7 +9,6 @@ import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
