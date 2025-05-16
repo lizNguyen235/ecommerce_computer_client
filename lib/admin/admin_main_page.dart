@@ -18,7 +18,8 @@ class AdminMainPage extends StatefulWidget {
 }
 
 class _AdminMainPageState extends State<AdminMainPage> {
-  AdminSection _currentSection = AdminSection.dashboard; // Mặc định là Dashboard
+  AdminSection _currentSection =
+      AdminSection.dashboard; // Mặc định là Dashboard
 
   String _getTitleForSection(AdminSection section) {
     switch (section) {
@@ -77,7 +78,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
     // }
 
     return Scaffold(
-      appBar: TAppBar(
+      appBar: AppBar(
         title: Text(_getTitleForSection(_currentSection)),
         // Bạn có thể thêm actions cho AppBar nếu cần, ví dụ nút refresh
       ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/service/AuthService.dart';
 import '../login/register.dart'; // Assuming RegisterDialog is in this file
 import 'package:firebase_auth/firebase_auth.dart'; // Import for FirebaseAuthException
+
 class LoginDialog extends StatefulWidget {
   const LoginDialog({super.key});
 
@@ -14,7 +15,8 @@ class _LoginDialogState extends State<LoginDialog> {
   final _formKey = GlobalKey<FormState>();
   bool _obscure = true;
 
-  final TextEditingController _emailController = TextEditingController(); // Changed from _usernameController
+  final TextEditingController _emailController =
+      TextEditingController(); // Changed from _usernameController
   final TextEditingController _passwordController = TextEditingController();
 
   // Instantiate the AuthService
@@ -50,7 +52,7 @@ class _LoginDialogState extends State<LoginDialog> {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const Home()),
-                (route) => false, // Remove all routes below Home
+            (route) => false, // Remove all routes below Home
           );
         } else {
           // This case is less common with signInWithEmailAndPassword as it usually throws an exception,
@@ -59,13 +61,13 @@ class _LoginDialogState extends State<LoginDialog> {
             _errorMessage = 'Đăng nhập không thành công (lỗi không xác định).';
           });
         }
-
       } on FirebaseAuthException catch (e) {
         // Handle specific Firebase Auth errors
         String message;
         if (e.code == 'user-not-found') {
           message = 'Không tìm thấy người dùng cho email này.';
-        } else if (e.code == 'wrong-password') {
+        } else if (e.code == 'wrong-password' ||
+            e.code == 'invalid-credential') {
           message = 'Sai mật khẩu.';
         } else if (e.code == 'invalid-email') {
           message = 'Định dạng email không hợp lệ.';
@@ -80,7 +82,6 @@ class _LoginDialogState extends State<LoginDialog> {
         setState(() {
           _errorMessage = message;
         });
-
       } catch (e) {
         // Handle any other potential errors (network issues, etc.)
         print("General Error during login: $e");
@@ -121,10 +122,13 @@ class _LoginDialogState extends State<LoginDialog> {
 
       // Nếu thành công, hiển thị thông báo cho người dùng
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Link đặt lại mật khẩu đã được gửi tới ${email}. Vui lòng kiểm tra hòm thư.")),
+        SnackBar(
+          content: Text(
+            "Link đặt lại mật khẩu đã được gửi tới ${email}. Vui lòng kiểm tra hòm thư.",
+          ),
+        ),
       );
       print("Password reset email sent to $email");
-
     } on FirebaseAuthException catch (e) {
       // Xử lý các lỗi cụ thể từ Firebase Auth khi gửi email reset
       String message;
@@ -138,13 +142,13 @@ class _LoginDialogState extends State<LoginDialog> {
         message = 'Đã xảy ra lỗi khi gửi email đặt lại mật khẩu: ${e.message}';
       }
       print("Firebase Auth Error sending reset email: ${e.code}");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
       setState(() {
-        _errorMessage = message; // Tùy chọn: cũng hiển thị lỗi dưới form nếu muốn
+        _errorMessage =
+            message; // Tùy chọn: cũng hiển thị lỗi dưới form nếu muốn
       });
-
     } catch (e) {
       // Xử lý các lỗi khác
       print("General Error sending reset email: $e");
@@ -152,7 +156,8 @@ class _LoginDialogState extends State<LoginDialog> {
         SnackBar(content: Text('Đã xảy ra lỗi không xác định: $e')),
       );
       setState(() {
-        _errorMessage = 'Đã xảy ra lỗi không xác định: $e'; // Tùy chọn: cũng hiển thị lỗi dưới form
+        _errorMessage =
+            'Đã xảy ra lỗi không xác định: $e'; // Tùy chọn: cũng hiển thị lỗi dưới form
       });
     } finally {
       // Luôn dừng trạng thái loading
@@ -225,8 +230,10 @@ class _LoginDialogState extends State<LoginDialog> {
                           hint: "Enter your email", // Changed hint
                           icon: Icons.email, // Changed icon
                           obscure: false,
-                          keyboardType: TextInputType.emailAddress, // Added keyboard type
-                          validator: (value) { // Added specific email validator
+                          keyboardType:
+                              TextInputType.emailAddress, // Added keyboard type
+                          validator: (value) {
+                            // Added specific email validator
                             if (value == null || value.trim().isEmpty) {
                               return "Email cannot be empty";
                             }
@@ -246,8 +253,10 @@ class _LoginDialogState extends State<LoginDialog> {
                           hint: "Enter your password",
                           icon: Icons.lock,
                           obscure: _obscure,
-                          keyboardType: TextInputType.text, // Added keyboard type
-                          validator: (value) { // Added password validator
+                          keyboardType:
+                              TextInputType.text, // Added keyboard type
+                          validator: (value) {
+                            // Added password validator
                             if (value == null || value.trim().isEmpty) {
                               return "Password cannot be empty";
                             }
@@ -288,11 +297,13 @@ class _LoginDialogState extends State<LoginDialog> {
                             padding: const EdgeInsets.only(bottom: 15.0),
                             child: Text(
                               _errorMessage!,
-                              style: const TextStyle(color: Colors.red, fontSize: 14),
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 14,
+                              ),
                               textAlign: TextAlign.center,
                             ),
                           ),
-
 
                         const SizedBox(height: 10),
                         Container(
@@ -304,22 +315,31 @@ class _LoginDialogState extends State<LoginDialog> {
                             ),
                             borderRadius: BorderRadius.circular(30),
                           ),
-                          child: _isLoading // Conditionally show loading or button
-                              ? const Center(child: CircularProgressIndicator(color: Colors.white))
-                              : ElevatedButton(
-                            onPressed: _submitLogin, // Call the login method
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                            ),
-                            child: const Text(
-                              "LOGIN",
-                              style: TextStyle(color: Colors.white, fontSize: 18), // Added font size
-                            ),
-                          ),
+                          child:
+                              _isLoading // Conditionally show loading or button
+                                  ? const Center(
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                  : ElevatedButton(
+                                    onPressed:
+                                        _submitLogin, // Call the login method
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.transparent,
+                                      shadowColor: Colors.transparent,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      "LOGIN",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                      ), // Added font size
+                                    ),
+                                  ),
                         ),
 
                         const SizedBox(height: 20),
@@ -358,7 +378,7 @@ class _LoginDialogState extends State<LoginDialog> {
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(builder: (_) => const Home()),
-                          (route) => false,
+                      (route) => false,
                     );
                   },
                 ),
@@ -385,7 +405,8 @@ class _LoginDialogState extends State<LoginDialog> {
     required bool obscure,
     Widget? suffix,
     required TextEditingController controller,
-    TextInputType keyboardType = TextInputType.text, // Added keyboard type with default
+    TextInputType keyboardType =
+        TextInputType.text, // Added keyboard type with default
     String? Function(String?)? validator, // Made validator optional
   }) {
     return TextFormField(
@@ -393,12 +414,15 @@ class _LoginDialogState extends State<LoginDialog> {
       obscureText: obscure,
       keyboardType: keyboardType, // Use provided keyboard type
       style: const TextStyle(fontSize: 14, color: Colors.black87),
-      validator: validator ?? (value) { // Use provided validator or default (non-empty)
-        if (value == null || value.trim().isEmpty) {
-          return "$label cannot be empty";
-        }
-        return null;
-      },
+      validator:
+          validator ??
+          (value) {
+            // Use provided validator or default (non-empty)
+            if (value == null || value.trim().isEmpty) {
+              return "$label cannot be empty";
+            }
+            return null;
+          },
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,

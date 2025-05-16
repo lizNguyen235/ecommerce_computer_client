@@ -1,6 +1,7 @@
 import 'package:ecommerce_computer_client/consts/consts.dart';
 import 'package:ecommerce_computer_client/firebase_options.dart';
 import 'package:ecommerce_computer_client/views/home/home.dart';
+import 'package:ecommerce_computer_client/views/splash/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -13,7 +14,8 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  final Widget initialScreen = Home(); // ← Thay đổi tại đây để test screen khác
+  final Widget initialScreen =
+      SplashScreen(); // ← Thay đổi tại đây để test screen khác
 
   @override
   Widget build(BuildContext context) {

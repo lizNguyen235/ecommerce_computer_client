@@ -1,3 +1,4 @@
+import 'package:ecommerce_computer_client/admin/admin_main_page.dart';
 import 'package:ecommerce_computer_client/consts/colors.dart';
 import 'package:ecommerce_computer_client/consts/styles.dart';
 import 'package:ecommerce_computer_client/core/service/AuthService.dart';
@@ -17,7 +18,7 @@ import '../login/change_password.dart';
 import '../support/support_chat_screen.dart';
 
 class AccountScreen extends StatelessWidget {
-  final  _auth = AuthService();
+  final _auth = AuthService();
   final user = UserService();
   AccountScreen({super.key});
 
@@ -142,17 +143,51 @@ class AccountScreen extends StatelessWidget {
                       Get.to(() => ChangePasswordPage());
                     },
                   ),
-                  if(user.getCurrentUserRole() == 'admin')
-                    SettingMenuTile(
-                      icon: Iconsax.shield,
-                      title: 'Admin Panel',
-                      subtitle: 'Manage products, orders and users',
-                      trailing: Icon(Iconsax.arrow_circle_right, size: 26),
-                      onTap: () {
-                        // Handle admin panel action
-                        Get.toNamed('/admin');
-                      },
-                    ),
+                  // SỬ DỤNG FUTUREBUILDER ĐỂ HIỂN THỊ ADMIN PANEL
+                  FutureBuilder<String>(
+                    future: user.getCurrentUserRole(), // Gọi Future ở đây
+                    builder: (context, snapshot) {
+                      // Trường hợp 1: Đang chờ dữ liệu
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        // return CircularProgressIndicator(); // Hoặc không hiển thị gì cả
+                        return SizedBox.shrink(); // Không hiển thị gì trong khi chờ
+                      }
+                      // Trường hợp 2: Có lỗi
+                      else if (snapshot.hasError) {
+                        print("Error fetching user role: ${snapshot.error}");
+                        // return Text('Error loading role'); // Hoặc không hiển thị gì cả
+                        return SizedBox.shrink();
+                      }
+                      // Trường hợp 3: Có dữ liệu
+                      else if (snapshot.hasData) {
+                        final userRole = snapshot.data;
+                        if (userRole == 'admin') {
+                          return SettingMenuTile(
+                            icon: Iconsax.shield,
+                            title: 'Admin Panel',
+                            subtitle: 'Manage products, orders and users',
+                            trailing: Icon(
+                              Iconsax.arrow_circle_right,
+                              size: 26,
+                            ),
+                            onTap: () {
+                              Get.to(
+                                () => const AdminMainPage(),
+                                transition: Transition.rightToLeft,
+                              );
+                            },
+                          );
+                        } else {
+                          // Người dùng không phải admin, không hiển thị gì
+                          return SizedBox.shrink();
+                        }
+                      }
+                      // Trường hợp 4: Không có dữ liệu (hiếm khi xảy ra nếu Future trả về String hoặc lỗi)
+                      else {
+                        return SizedBox.shrink();
+                      }
+                    },
+                  ),
                   SizedBox(height: Sizes.spaceBtwSections),
 
                   Text(

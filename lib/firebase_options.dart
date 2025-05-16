@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'ecommerapp-a3700.firebasestorage.app',
     measurementId: 'G-TJCT1KEJ9K',
   );
+
 }

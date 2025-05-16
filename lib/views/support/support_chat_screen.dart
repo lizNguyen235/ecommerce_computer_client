@@ -12,8 +12,7 @@ import '../../models/message.dart'; // Điều chỉnh đường dẫn
 
 // Import style utils
 import '../../utils/colors.dart'; // Điều chỉnh đường dẫn
-import '../../utils/sizes.dart'; // Điều chỉnh đường dẫn
-import '../../consts/colors.dart'; // Điều chỉnh đường dẫn
+import '../../utils/sizes.dart'; // Điều chỉnh đường dẫn// Điều chỉnh đường dẫn
 import '../../widgets/appbar.dart'; // Điều chỉnh đường dẫn
 import 'package:iconsax/iconsax.dart';
 
@@ -28,11 +27,13 @@ class _SupportChatPageState extends State<SupportChatPage> {
   final TextEditingController _messageController = TextEditingController();
   late ChatService _chatService; // Sẽ được khởi tạo trong FutureBuilder
   final AuthService _authService = AuthService();
-  final ConfigService _configService = ConfigService(); // Khởi tạo ConfigService
+  final ConfigService _configService =
+      ConfigService(); // Khởi tạo ConfigService
   final ScrollController _scrollController = ScrollController();
 
   User? _currentUser;
-  String? _adminUidForStyling; // Chỉ dùng để style tin nhắn của admin, lấy 1 lần
+  String?
+  _adminUidForStyling; // Chỉ dùng để style tin nhắn của admin, lấy 1 lần
 
   late Future<void> _initializePageFuture;
   bool _isSendingMessage = false;
@@ -66,7 +67,9 @@ class _SupportChatPageState extends State<SupportChatPage> {
       _adminUidForStyling = await _configService.getAdminUid();
 
       if (_adminUidForStyling == null || _adminUidForStyling!.isEmpty) {
-        print("SupportChatPage: Admin UID configuration error during initialization.");
+        print(
+          "SupportChatPage: Admin UID configuration error during initialization.",
+        );
         throw Exception("Admin configuration is missing or invalid.");
       }
 
@@ -93,9 +96,7 @@ class _SupportChatPageState extends State<SupportChatPage> {
 
     if (mounted) setState(() => _isSendingMessage = true);
     try {
-      await _chatService.sendMessage(
-        text: _messageController.text.trim(),
-      );
+      await _chatService.sendMessage(text: _messageController.text.trim());
       _messageController.clear();
     } catch (e) {
       print("SupportChatPage: Error sending text message: ${e.toString()}");
@@ -114,7 +115,9 @@ class _SupportChatPageState extends State<SupportChatPage> {
 
     final picker = ImagePicker();
     // Cân nhắc dùng pickImage nếu chỉ cho gửi 1 ảnh mỗi lần để đơn giản hơn
-    final List<XFile> pickedFiles = await picker.pickMultiImage(imageQuality: 70); // Giảm chất lượng ảnh
+    final List<XFile> pickedFiles = await picker.pickMultiImage(
+      imageQuality: 70,
+    ); // Giảm chất lượng ảnh
 
     if (pickedFiles.isEmpty) {
       print("SupportChatPage: No images selected.");
@@ -130,19 +133,21 @@ class _SupportChatPageState extends State<SupportChatPage> {
         if (await imageFile.length() > 5 * 1024 * 1024) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Ảnh '${pickedFile.name}' quá lớn (tối đa 5MB).")),
+              SnackBar(
+                content: Text("Ảnh '${pickedFile.name}' quá lớn (tối đa 5MB)."),
+              ),
             );
           }
           continue; // Bỏ qua file này
         }
 
-        await _chatService.sendMessage(
-          imageFile: imageFile,
-        );
+        await _chatService.sendMessage(imageFile: imageFile);
       }
       print("SupportChatPage: Selected images processed.");
     } catch (e) {
-      print("SupportChatPage: Error sending one or more images: ${e.toString()}");
+      print(
+        "SupportChatPage: Error sending one or more images: ${e.toString()}",
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Gửi ảnh thất bại: ${e.toString()}")),
@@ -156,7 +161,8 @@ class _SupportChatPageState extends State<SupportChatPage> {
   void _scrollToBottom() {
     // Đợi một chút để đảm bảo ListView đã cập nhật các item
     Future.delayed(const Duration(milliseconds: 200), () {
-      if (_scrollController.hasClients && _scrollController.position.maxScrollExtent > 0) {
+      if (_scrollController.hasClients &&
+          _scrollController.position.maxScrollExtent > 0) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
@@ -171,8 +177,14 @@ class _SupportChatPageState extends State<SupportChatPage> {
     if (_currentUser == null) {
       // Người dùng chưa đăng nhập
       return Scaffold(
-          backgroundColor: TColors.light,
-        appBar: TAppBar(title: Text('Chat Support', style: Theme.of(context).textTheme.headlineMedium), showBackArrow: true),
+        backgroundColor: TColors.light,
+        appBar: TAppBar(
+          title: Text(
+            'Chat Support',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          showBackArrow: true,
+        ),
         body: const Center(
           child: Padding(
             padding: EdgeInsets.all(16.0),
@@ -187,14 +199,26 @@ class _SupportChatPageState extends State<SupportChatPage> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
-            appBar: TAppBar(title: Text('Chat Support', style: Theme.of(context).textTheme.headlineLarge), showBackArrow: true),
+            appBar: TAppBar(
+              title: Text(
+                'Chat Support',
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
+              showBackArrow: true,
+            ),
             body: const Center(child: CircularProgressIndicator()),
           );
         }
 
         if (snapshot.hasError) {
           return Scaffold(
-            appBar: TAppBar(title: Text('Chat Support', style: Theme.of(context).textTheme.headlineLarge), showBackArrow: true),
+            appBar: TAppBar(
+              title: Text(
+                'Chat Support',
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
+              showBackArrow: true,
+            ),
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -214,7 +238,9 @@ class _SupportChatPageState extends State<SupportChatPage> {
             showBackArrow: true,
             title: Text(
               'Chat Support',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: TColors.dark),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(color: TColors.dark),
             ),
           ),
           body: Column(
@@ -223,34 +249,58 @@ class _SupportChatPageState extends State<SupportChatPage> {
                 child: StreamBuilder<List<Message>>(
                   stream: _chatService.getMessagesForCurrentUser(),
                   builder: (context, streamSnapshot) {
-                    if (streamSnapshot.connectionState == ConnectionState.waiting &&
-                        (!streamSnapshot.hasData || streamSnapshot.data!.isEmpty)) {
+                    if (streamSnapshot.connectionState ==
+                            ConnectionState.waiting &&
+                        (!streamSnapshot.hasData ||
+                            streamSnapshot.data!.isEmpty)) {
                       // Chỉ hiển thị loading nếu chưa có dữ liệu ban đầu
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (streamSnapshot.hasError) {
-                      print("SupportChatPage: Chat Stream Error: ${streamSnapshot.error}");
-                      return Center(child: Text('Lỗi tải tin nhắn: ${streamSnapshot.error}'));
+                      print(
+                        "SupportChatPage: Chat Stream Error: ${streamSnapshot.error}",
+                      );
+                      return Center(
+                        child: Text(
+                          'Lỗi tải tin nhắn: ${streamSnapshot.error}',
+                        ),
+                      );
                     }
-                    if (!streamSnapshot.hasData || streamSnapshot.data!.isEmpty) {
-                      return const Center(child: Text('Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!'));
+                    if (!streamSnapshot.hasData ||
+                        streamSnapshot.data!.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          'Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!',
+                        ),
+                      );
                     }
 
                     final messages = streamSnapshot.data!;
                     // Gọi _scrollToBottom sau khi frame được build nếu có tin nhắn mới
                     // Điều này giúp cuộn xuống khi có tin nhắn mới từ stream
-                    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+                    WidgetsBinding.instance.addPostFrameCallback(
+                      (_) => _scrollToBottom(),
+                    );
 
                     return ListView.builder(
                       controller: _scrollController,
-                      padding: const EdgeInsets.all(Sizes.sm), // Thêm padding cho ListView
+                      padding: const EdgeInsets.all(
+                        Sizes.sm,
+                      ), // Thêm padding cho ListView
                       itemCount: messages.length,
                       itemBuilder: (context, index) {
                         final message = messages[index];
-                        final bool isCurrentUserMessage = message.senderId == _currentUser!.uid;
-                        final bool isAdminMessage = _adminUidForStyling != null && message.senderId == _adminUidForStyling;
+                        final bool isCurrentUserMessage =
+                            message.senderId == _currentUser!.uid;
+                        final bool isAdminMessage =
+                            _adminUidForStyling != null &&
+                            message.senderId == _adminUidForStyling;
 
-                        return _buildMessageItem(message, isCurrentUserMessage, isAdminMessage);
+                        return _buildMessageItem(
+                          message,
+                          isCurrentUserMessage,
+                          isAdminMessage,
+                        );
                       },
                     );
                   },
@@ -264,72 +314,106 @@ class _SupportChatPageState extends State<SupportChatPage> {
     );
   }
 
-  Widget _buildMessageItem(Message message, bool isCurrentUserMessage, bool isAdminMessage) {
+  Widget _buildMessageItem(
+    Message message,
+    bool isCurrentUserMessage,
+    bool isAdminMessage,
+  ) {
     return Align(
-      alignment: isCurrentUserMessage ? Alignment.centerRight : Alignment.centerLeft,
+      alignment:
+          isCurrentUserMessage ? Alignment.centerRight : Alignment.centerLeft,
       child: Column(
-        crossAxisAlignment: isCurrentUserMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment:
+            isCurrentUserMessage
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.start,
         children: [
           Container(
-            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75), // Giới hạn chiều rộng bubble
-            margin: const EdgeInsets.symmetric(vertical: 4.0), // Bỏ horizontal margin ở đây, dùng padding của ListView
-            padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 14.0),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.75,
+            ), // Giới hạn chiều rộng bubble
+            margin: const EdgeInsets.symmetric(
+              vertical: 4.0,
+            ), // Bỏ horizontal margin ở đây, dùng padding của ListView
+            padding: const EdgeInsets.symmetric(
+              vertical: 10.0,
+              horizontal: 14.0,
+            ),
             decoration: BoxDecoration(
-                color: isCurrentUserMessage
-                    ? TColors.primary.withOpacity(0.9)
-                    : (isAdminMessage ? TColors.secondary.withOpacity(0.2) : Colors.grey[300]), // Màu riêng cho admin
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(isCurrentUserMessage ? 16 : 4),
-                  bottomRight: Radius.circular(isCurrentUserMessage ? 4 : 16),
+              color:
+                  isCurrentUserMessage
+                      ? TColors.primary.withOpacity(0.9)
+                      : (isAdminMessage
+                          ? TColors.secondary.withOpacity(0.2)
+                          : Colors.grey[300]), // Màu riêng cho admin
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(16),
+                topRight: const Radius.circular(16),
+                bottomLeft: Radius.circular(isCurrentUserMessage ? 16 : 4),
+                bottomRight: Radius.circular(isCurrentUserMessage ? 4 : 16),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  spreadRadius: 1,
+                  blurRadius: 3,
+                  offset: const Offset(0, 1),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    spreadRadius: 1,
-                    blurRadius: 3,
-                    offset: const Offset(0, 1),
-                  )
-                ]
+              ],
             ),
-            child: message.type == 'image' && message.imageUrl != null
-                ? ClipRRect(
-              borderRadius: BorderRadius.circular(8.0),
-              child: Image.network(
-                message.imageUrl!,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    width: 150, height: 150, // Kích thước cố định khi loading
-                    alignment: Alignment.center,
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                          : null,
+            child:
+                message.type == 'image' && message.imageUrl != null
+                    ? ClipRRect(
+                      borderRadius: BorderRadius.circular(8.0),
+                      child: Image.network(
+                        message.imageUrl!,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            width: 150,
+                            height: 150, // Kích thước cố định khi loading
+                            alignment: Alignment.center,
+                            child: CircularProgressIndicator(
+                              value:
+                                  loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 150,
+                            height: 100,
+                            alignment: Alignment.center,
+                            child: const Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Iconsax.warning_2,
+                                  color: Colors.red,
+                                  size: 30,
+                                ),
+                                SizedBox(height: 4),
+                                Text('Lỗi ảnh', style: TextStyle(fontSize: 12)),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    )
+                    : Text(
+                      message.text ?? '',
+                      style: TextStyle(
+                        color:
+                            isCurrentUserMessage
+                                ? TColors.textWhite
+                                : TColors.dark,
+                        fontSize: 15,
+                      ),
                     ),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                      width: 150, height: 100,
-                      alignment: Alignment.center,
-                      child: const Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [ Icon(Iconsax.warning_2, color: Colors.red, size: 30), SizedBox(height: 4), Text('Lỗi ảnh', style: TextStyle(fontSize: 12))],
-                      )
-                  );
-                },
-              ),
-            )
-                : Text(
-              message.text ?? '',
-              style: TextStyle(
-                color: isCurrentUserMessage ? TColors.textWhite : TColors.dark,
-                fontSize: 15,
-              ),
-            ),
           ),
           Padding(
             padding: EdgeInsets.only(
@@ -341,7 +425,9 @@ class _SupportChatPageState extends State<SupportChatPage> {
               message.timestamp.seconds > 0
                   ? DateFormat('HH:mm').format(message.timestamp.toDate())
                   : 'Đang gửi...',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.grey[600]),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: Colors.grey[600]),
             ),
           ),
         ],
@@ -351,9 +437,15 @@ class _SupportChatPageState extends State<SupportChatPage> {
 
   Widget _buildMessageInputArea() {
     return Container(
-      padding: const EdgeInsets.only(left: Sizes.md, right: Sizes.md, bottom: Sizes.md, top: Sizes.xs),
+      padding: const EdgeInsets.only(
+        left: Sizes.md,
+        right: Sizes.md,
+        bottom: Sizes.md,
+        top: Sizes.xs,
+      ),
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor, // Hoặc màu nền bạn muốn
+        color:
+            Theme.of(context).scaffoldBackgroundColor, // Hoặc màu nền bạn muốn
         boxShadow: [
           BoxShadow(
             offset: const Offset(0, -2),
@@ -362,13 +454,20 @@ class _SupportChatPageState extends State<SupportChatPage> {
           ),
         ],
       ),
-      child: SafeArea( // Để input không bị che bởi notch/system UI ở dưới
+      child: SafeArea(
+        // Để input không bị che bởi notch/system UI ở dưới
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end, // Căn các item theo cuối nếu TextField nhiều dòng
+          crossAxisAlignment:
+              CrossAxisAlignment
+                  .end, // Căn các item theo cuối nếu TextField nhiều dòng
           children: [
             IconButton(
               onPressed: _isSendingMessage ? null : _sendImageMessage,
-              icon: Icon(Iconsax.gallery_add, color: _isSendingMessage ? Colors.grey : TColors.primary, size: 28),
+              icon: Icon(
+                Iconsax.gallery_add,
+                color: _isSendingMessage ? Colors.grey : TColors.primary,
+                size: 28,
+              ),
               tooltip: 'Gửi ảnh',
             ),
             Expanded(
@@ -378,41 +477,75 @@ class _SupportChatPageState extends State<SupportChatPage> {
                 decoration: InputDecoration(
                   hintText: 'Nhập tin nhắn...',
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(Sizes.cardRadiusLg * 1.5), // Bo tròn hơn
+                    borderRadius: BorderRadius.circular(
+                      Sizes.cardRadiusLg * 1.5,
+                    ), // Bo tròn hơn
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
                   fillColor: Colors.grey[200],
-                  contentPadding: const EdgeInsets.symmetric(horizontal: Sizes.md, vertical: Sizes.sm + 2), // Điều chỉnh padding
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: Sizes.md,
+                    vertical: Sizes.sm + 2,
+                  ), // Điều chỉnh padding
                 ),
                 keyboardType: TextInputType.multiline,
                 minLines: 1,
                 maxLines: 5, // Cho phép nhập nhiều dòng
-                textInputAction: TextInputAction.newline, // Hoặc .send nếu muốn custom action
-                onSubmitted: (_) => _sendTextMessage(), // Gửi khi nhấn enter trên bàn phím cứng
+                textInputAction:
+                    TextInputAction
+                        .newline, // Hoặc .send nếu muốn custom action
+                onSubmitted:
+                    (_) =>
+                        _sendTextMessage(), // Gửi khi nhấn enter trên bàn phím cứng
               ),
             ),
             const SizedBox(width: Sizes.xs),
-            Material( // Bọc IconButton trong Material để có hiệu ứng ripple trên gradient
+            Material(
+              // Bọc IconButton trong Material để có hiệu ứng ripple trên gradient
               color: Colors.transparent, // Quan trọng
               borderRadius: BorderRadius.circular(Sizes.buttonRadius * 2),
-              child: InkWell( // Dùng InkWell cho hiệu ứng ripple
+              child: InkWell(
+                // Dùng InkWell cho hiệu ứng ripple
                 onTap: _isSendingMessage ? null : _sendTextMessage,
                 borderRadius: BorderRadius.circular(Sizes.buttonRadius * 2),
-                child: Ink( // Dùng Ink để vẽ gradient
+                child: Ink(
+                  // Dùng Ink để vẽ gradient
                   decoration: BoxDecoration(
-                    gradient: _isSendingMessage ? null : LinearGradient( // Bỏ gradient khi đang gửi
-                      colors: [TColors.light, TColors.primary.withOpacity(0.7)], // Màu gradient
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    color: _isSendingMessage ? Colors.grey[400] : null, // Màu nền khi disable
+                    gradient:
+                        _isSendingMessage
+                            ? null
+                            : LinearGradient(
+                              // Bỏ gradient khi đang gửi
+                              colors: [
+                                TColors.light,
+                                TColors.primary.withOpacity(0.7),
+                              ], // Màu gradient
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                    color:
+                        _isSendingMessage
+                            ? Colors.grey[400]
+                            : null, // Màu nền khi disable
                     borderRadius: BorderRadius.circular(Sizes.buttonRadius * 2),
                   ),
                   padding: const EdgeInsets.all(Sizes.sm + 2), // Kích thước nút
-                  child: _isSendingMessage
-                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: TColors.textWhite, strokeWidth: 2.5))
-                      : const Icon(Iconsax.send_1, color: TColors.primary, size: 24),
+                  child:
+                      _isSendingMessage
+                          ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: TColors.textWhite,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                          : const Icon(
+                            Iconsax.send_1,
+                            color: TColors.primary,
+                            size: 24,
+                          ),
                 ),
               ),
             ),
