@@ -16,6 +16,8 @@ class Sizes {
   static const double fontSizeSm = 14.0;
   static const double fontSizeMd = 16.0;
   static const double fontSizeLg = 18.0;
+  static const double fontSizeXl = 20.0; // Thêm nếu cần cho tiêu đề lớn hơn
+
 
   // Button Sizes
   static const double buttonHeight = 18.0;

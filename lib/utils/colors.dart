@@ -29,4 +29,14 @@ class TColors {
   // Border Colors
   static const Color borderPrimary = Color(0xFFD9D9D9); // Light Grey
   static const Color borderSecondary = Color(0xFFE6E6E6); // Very Light Gre
+
+  // Nền
+  static const Color creamyWhite = Color(0xFFFAF8F5); // Nền trắng kem
+  static const Color lightSurface = Colors.white;    // Bề mặt phụ, ví dụ card
+
+  static const Color border = Color(0xFFE2E8F0);     // Viền xám nhạt
+  static const Color success = Color(0xFF28A745);   // Xanh lá cho thành công
+  static const Color error = Color(0xFFDC3545);     // Đỏ cho lỗi
+  static const Color warning = Color(0xFFFFC107);   // Vàng cho cảnh báo
+  static const Color unreadIndicator = Colors.redAccent; // Có thể giữ màu đỏ cho thông báo chưa đọc
 }
