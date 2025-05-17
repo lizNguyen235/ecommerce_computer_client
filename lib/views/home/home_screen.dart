@@ -1,9 +1,11 @@
 import 'package:ecommerce_computer_client/consts/consts.dart';
 import 'package:ecommerce_computer_client/consts/lists.dart';
+import 'package:ecommerce_computer_client/controller/product_controller.dart';
 import 'package:ecommerce_computer_client/utils/colors.dart';
 import 'package:ecommerce_computer_client/views/brand/brand_screen.dart';
-import 'package:ecommerce_computer_client/views/product/all_product_screen.dart';
 import 'package:ecommerce_computer_client/views/product/product_cart_vertical.dart';
+import 'package:ecommerce_computer_client/views/product/product_catalog_screen.dart';
+import 'package:ecommerce_computer_client/views/shimmer/vertical_product_shimmer.dart';
 import 'package:ecommerce_computer_client/widgets/custom_grid_layout.dart';
 import 'package:ecommerce_computer_client/widgets/home_buttons.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +16,9 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Initialize the ProductController
+    final controller = ProductController.instance;
+    // Fetch featured products
     return Container(
       padding: const EdgeInsets.all(12),
       color: TColors.light,
@@ -134,28 +139,41 @@ class HomeScreen extends StatelessWidget {
                             .make(),
                         InkWell(
                           child:
-                              "View all".text
-                                  .color(darkFontGrey)
-                                  .fontFamily(regular)
-                                  .make(),
-                          onTap: () => Get.to(const AllProductsScreen()),
+                          "View all".text
+                              .color(darkFontGrey)
+                              .fontFamily(regular)
+                              .make(),
+                          onTap: () => Get.to(const ProductCatalogScreen()),
                         ),
                       ],
                     ).box.padding(const EdgeInsets.all(8)).make(),
 
                     10.heightBox,
-                    // Featured categories list
+                    // New products
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: List.generate(
-                          6,
-                          (index) => ProductCartVertical().marginOnly(
-                            left: index == 0 ? 0 : 6,
-                            right: 6,
+                      child: Obx(() {
+                        if (controller.isLoadingNew.value) {
+                          return const TVerticalProductShimmer();
+                        }
+                        if (controller.newProducts.isEmpty) {
+                          return "No products found".text
+                              .color(Colors.black)
+                              .fontFamily(bold)
+                              .makeCentered();
+                        }
+                        return Row(
+                          children: List.generate(
+                            controller.newProducts.length,
+                                (index) => ProductCartVertical(
+                              product: controller.newProducts[index],
+                            ).marginOnly(
+                              left: index == 0 ? 0 : 6,
+                              right: 6,
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      }),
                     ),
 
                     20.heightBox,
@@ -177,26 +195,39 @@ class HomeScreen extends StatelessWidget {
                                   .make(),
                               InkWell(
                                 child:
-                                    "View all".text
-                                        .color(whiteColor)
-                                        .fontFamily(regular)
-                                        .make(),
-                                onTap: () => Get.to(const AllProductsScreen()),
+                                "View all".text
+                                    .color(whiteColor)
+                                    .fontFamily(regular)
+                                    .make(),
+                                onTap: () => Get.to(const ProductCatalogScreen()),
                               ),
                             ],
                           ),
                           10.heightBox,
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: List.generate(
-                                6,
-                                (index) => ProductCartVertical().marginOnly(
-                                  left: index == 0 ? 0 : 6,
-                                  right: 6,
+                            child: Obx(() {
+                              if (controller.isLoadingFeatured.value) {
+                                return const TVerticalProductShimmer();
+                              }
+                              if (controller.featuredProducts.isEmpty) {
+                                return "No products found".text
+                                    .color(Colors.black)
+                                    .fontFamily(bold)
+                                    .makeCentered();
+                              }
+                              return Row(
+                                children: List.generate(
+                                  controller.featuredProducts.length,
+                                      (index) => ProductCartVertical(
+                                    product: controller.featuredProducts[index],
+                                  ).marginOnly(
+                                    left: index == 0 ? 0 : 6,
+                                    right: 6,
+                                  ),
                                 ),
-                              ),
-                            ),
+                              );
+                            }),
                           ),
                         ],
                       ),
@@ -215,20 +246,35 @@ class HomeScreen extends StatelessWidget {
                             .make(),
                         InkWell(
                           child:
-                              "View all".text
-                                  .color(darkFontGrey)
-                                  .fontFamily(regular)
-                                  .make(),
-                          onTap: () => Get.to(const AllProductsScreen()),
+                          "View all".text
+                              .color(darkFontGrey)
+                              .fontFamily(regular)
+                              .make(),
+                          onTap: () => Get.to(const ProductCatalogScreen()),
                         ),
                       ],
                     ).box.padding(const EdgeInsets.all(8)).make(),
 
                     10.heightBox,
                     // All products
-                    CustomGridLayout(
-                      itemCount: 8,
-                      itemBuilder: (_, index) => ProductCartVertical(),
+                    Obx(
+                          () {
+                        if (controller.isLoadingHome.value) {
+                          return const TVerticalProductShimmer();
+                        }
+                        if (controller.homeProducts.isEmpty) {
+                          return "No products found".text
+                              .color(Colors.black)
+                              .fontFamily(bold)
+                              .makeCentered();
+                        }
+                        return CustomGridLayout(
+                          itemCount: controller.homeProducts.length,
+                          itemBuilder: (context, index) => ProductCartVertical(
+                            product: controller.homeProducts[index],
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

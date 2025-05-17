@@ -1,30 +1,36 @@
+
 import 'package:flutter/material.dart';
 
 class CustomGridLayout extends StatelessWidget {
   const CustomGridLayout({
     super.key,
     required this.itemCount,
-    this.mainAxisExtent = 288,
     required this.itemBuilder,
+    this.crossAxisCount = 2,
+    this.mainAxisExtent = 288,
+    this.scrollController, ScrollController? controller,
   });
 
   final int itemCount;
-  final double? mainAxisExtent;
-  final Widget? Function(BuildContext, int) itemBuilder;
+  final int crossAxisCount;
+  final double mainAxisExtent;
+  final Widget Function(BuildContext, int) itemBuilder;
+  final ScrollController? scrollController;
 
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(),
+      controller: scrollController ?? ScrollController(),
       shrinkWrap: true,
-      itemCount: itemCount,
+      physics: const BouncingScrollPhysics(),
       padding: EdgeInsets.zero,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+        crossAxisCount: crossAxisCount,
         mainAxisExtent: mainAxisExtent,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
       ),
+      itemCount: itemCount,
       itemBuilder: itemBuilder,
     );
   }
