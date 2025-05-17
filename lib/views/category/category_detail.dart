@@ -85,7 +85,13 @@ class CategoryDetail extends StatelessWidget {
                         .make()
                         .onTap(() {
                           // Navigate to product detail screen
-                          Get.to(() => ProductDetailScreen());
+                          Get.to(() => Text(
+                            "Product Detail",
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ));
                         });
                   },
                 ),

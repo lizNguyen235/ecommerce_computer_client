@@ -1,4 +1,5 @@
 import 'package:ecommerce_computer_client/consts/consts.dart';
+import 'package:ecommerce_computer_client/controller/product_controller.dart';
 import 'package:ecommerce_computer_client/firebase_options.dart';
 import 'package:ecommerce_computer_client/views/home/home.dart';
 import 'package:ecommerce_computer_client/views/splash/splash_screen.dart';
@@ -12,6 +13,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await initializeDateFormatting('vi_VN');
+  // Khởi tạo các dịch vụ khác nếu cần
+  Get.put(ProductController());
   runApp(MyApp());
 }
 
