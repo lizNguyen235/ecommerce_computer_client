@@ -112,7 +112,7 @@ class _EditMyProfileScreenState extends State<EditMyProfileScreen> {
       } else {
         newAvatarUrl = await _storageService.uploadUserAvatar(currentUser.uid, _selectedImageFile!);
       }
-
+      await _storageService.deleteImage(_currentAvatarUrl ?? ''); // Xóa ảnh cũ nếu có
       await _userService.updateUserProfile(currentUser.uid, {'avatarUrl': newAvatarUrl});
 
       if (mounted) {

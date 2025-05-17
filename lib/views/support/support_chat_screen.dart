@@ -306,37 +306,33 @@ class _SupportChatPageState extends State<SupportChatPage> {
   }
 
   Widget _buildMessageItem(
-    Message message,
-    bool isCurrentUserMessage,
-    bool isAdminMessage,
-  ) {
+      Message message,
+      bool isCurrentUserMessage,
+      bool isAdminMessage,
+      ) {
+    // Kích thước tối đa cho ảnh, bạn có thể điều chỉnh các giá trị này
+    final double maxImageWidth = MediaQuery.of(context).size.width * 0.65; // Ví dụ: 65% chiều rộng màn hình
+    final double maxImageHeight = MediaQuery.of(context).size.height * 0.3; // Ví dụ: 30% chiều cao màn hình
+
     return Align(
       alignment:
-          isCurrentUserMessage ? Alignment.centerRight : Alignment.centerLeft,
+      isCurrentUserMessage ? Alignment.centerRight : Alignment.centerLeft,
       child: Column(
         crossAxisAlignment:
-            isCurrentUserMessage
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.start,
+        isCurrentUserMessage
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           Container(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.75,
-            ), // Giới hạn chiều rộng bubble
-            margin: const EdgeInsets.symmetric(
-              vertical: 4.0,
-            ), // Bỏ horizontal margin ở đây, dùng padding của ListView
-            padding: const EdgeInsets.symmetric(
-              vertical: 10.0,
-              horizontal: 14.0,
-            ),
+            // Không cần đặt constraints ở đây nữa nếu Image được bọc bởi ConstrainedBox
+            margin: const EdgeInsets.symmetric(vertical: 4.0),
+            padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 14.0),
             decoration: BoxDecoration(
-              color:
-                  isCurrentUserMessage
-                      ? TColors.primary.withOpacity(0.9)
-                      : (isAdminMessage
-                          ? TColors.secondary.withOpacity(0.2)
-                          : Colors.grey[300]), // Màu riêng cho admin
+              color: isCurrentUserMessage
+                  ? TColors.primary.withOpacity(0.9)
+                  : (isAdminMessage
+                  ? TColors.secondary.withOpacity(0.2)
+                  : Colors.grey[300]),
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(16),
                 topRight: const Radius.circular(16),
@@ -352,61 +348,71 @@ class _SupportChatPageState extends State<SupportChatPage> {
                 ),
               ],
             ),
-            child:
-                message.type == 'image' && message.imageUrl != null
-                    ? ClipRRect(
-                      borderRadius: BorderRadius.circular(8.0),
-                      child: Image.network(
-                        message.imageUrl!,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            width: 150,
-                            height: 150, // Kích thước cố định khi loading
-                            alignment: Alignment.center,
-                            child: CircularProgressIndicator(
-                              value:
-                                  loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                      : null,
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 150,
-                            height: 100,
-                            alignment: Alignment.center,
-                            child: const Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Iconsax.warning_2,
-                                  color: Colors.red,
-                                  size: 30,
-                                ),
-                                SizedBox(height: 4),
-                                Text('Lỗi ảnh', style: TextStyle(fontSize: 12)),
-                              ],
-                            ),
-                          );
-                        },
+            child: message.type == 'image' && message.imageUrl != null && message.imageUrl!.isNotEmpty
+                ? ClipRRect( // Giữ ClipRRect để bo góc cho ảnh
+              borderRadius: BorderRadius.circular(8.0), // Bo góc nhẹ cho ảnh bên trong bubble
+              child: ConstrainedBox( // << SỬ DỤNG ConstrainedBox
+                constraints: BoxConstraints(
+                  maxWidth: maxImageWidth,
+                  maxHeight: maxImageHeight,
+                  // Bạn có thể thêm minWidth, minHeight nếu muốn
+                ),
+                child: Image.network(
+                  message.imageUrl!,
+                  fit: BoxFit.contain, // BoxFit.contain để thấy toàn bộ ảnh và giữ tỷ lệ
+                  // Hoặc BoxFit.cover nếu muốn lấp đầy và chấp nhận cắt xén
+                  // Không cần width/height trực tiếp trên Image.network nữa
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    // Placeholder có thể có kích thước cố định hoặc co giãn theo ConstrainedBox
+                    return Container(
+                      // width: maxImageWidth * 0.8, // Ví dụ kích thước placeholder
+                      // height: maxImageHeight * 0.8,
+                      constraints: BoxConstraints(maxWidth: maxImageWidth, maxHeight: maxImageHeight), // Giữ placeholder trong giới hạn
+                      color: TColors.lightContainer.withOpacity(0.5), // Màu nền cho placeholder
+                      alignment: Alignment.center,
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                            : null,
+                        strokeWidth: 2.0,
+                        color: TColors.primary,
                       ),
-                    )
-                    : Text(
-                      message.text ?? '',
-                      style: TextStyle(
-                        color:
-                            isCurrentUserMessage
-                                ? TColors.textWhite
-                                : TColors.dark,
-                        fontSize: 15,
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      constraints: BoxConstraints(maxWidth: maxImageWidth, maxHeight: maxImageHeight), // Giữ placeholder trong giới hạn
+                      padding: const EdgeInsets.all(Sizes.sm), // Padding cho icon và text lỗi
+                      decoration: BoxDecoration(
+                          color: Colors.grey[200], // Màu nền cho lỗi
+                          borderRadius: BorderRadius.circular(8.0)
                       ),
-                    ),
+                      alignment: Alignment.center,
+                      child: const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Iconsax.gallery_slash, color: Colors.redAccent, size: 30),
+                          SizedBox(height: 4),
+                          Text('Lỗi ảnh', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            )
+                : Text( // Tin nhắn văn bản
+              message.text ?? '',
+              style: TextStyle(
+                color: isCurrentUserMessage ? TColors.textWhite : TColors.dark,
+                fontSize: 15,
+              ),
+            ),
           ),
-          Padding(
+          Padding( // Timestamp
             padding: EdgeInsets.only(
               left: isCurrentUserMessage ? 0 : 4.0,
               right: isCurrentUserMessage ? 4.0 : 0,
@@ -416,9 +422,7 @@ class _SupportChatPageState extends State<SupportChatPage> {
               message.timestamp.seconds > 0
                   ? DateFormat('HH:mm').format(message.timestamp.toDate())
                   : 'Đang gửi...',
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall?.copyWith(color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.grey[600]),
             ),
           ),
         ],
