@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
 
 // Điều chỉnh đường dẫn import cho phù hợp với cấu trúc dự án của bạn
@@ -39,12 +40,13 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   final TextEditingController _phoneNumberController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _fullNameController = TextEditingController();
-
+  final TextEditingController _loyaltyPointsController = TextEditingController();
   @override
   void dispose() {
     _phoneNumberController.dispose();
     _addressController.dispose();
     _fullNameController.dispose();
+    _loyaltyPointsController.dispose();
     super.dispose();
 
   }
@@ -94,7 +96,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final bool isBanned = userData['isBanned'] as bool? ?? false;
     final String avatarUrl = userData['avatarUrl'] as String? ?? '';
     final String phoneNumber = userData['phoneNumber'] as String? ?? 'Chưa có SĐT';
-
+    final int loyaltyPoints = userData['loyaltyPoints'] as int? ?? 0;
     // Lấy và chuyển đổi danh sách địa chỉ một cách an toàn
     final List<dynamic> addressesDynamic = userData['shippingAddress'] as List<dynamic>? ?? [];
     final List<String> shippingAddresses = addressesDynamic.map((e) => e.toString()).toList();
@@ -204,7 +206,28 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               ],
             ),
             const SizedBox(height: Sizes.sm),
-
+            // MỚI: Hiển thị và sửa điểm Loyalty
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Iconsax.medal_star, size: Sizes.iconMd, color: TColors.warning), // Icon cho điểm
+                    const SizedBox(width: Sizes.sm / 2),
+                    Text('Điểm Loyalty: ', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: TColors.dark)),
+                    Text('$loyaltyPoints', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: TColors.primary)),
+                  ],
+                ),
+                if (!isCurrentUserTheAdminViewing)
+                  TextButton.icon(
+                    icon: const Icon(Iconsax.edit, size: Sizes.iconSm, color: TColors.primary),
+                    label: const Text('Sửa điểm', style: TextStyle(fontSize: Sizes.fontSizeSm * 0.9, color: TColors.primary)),
+                    style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: Sizes.sm/2)),
+                    onPressed: () => _showEditLoyaltyPointsDialog(context, uid, fullName, loyaltyPoints),
+                  ),
+              ],
+            ),
+            const SizedBox(height: Sizes.sm),
             // --- Phần hiển thị và quản lý địa chỉ ---
             _buildAddressesSection(context, uid, fullName, shippingAddresses, isCurrentUserTheAdminViewing),
             // --- Hết phần địa chỉ ---
@@ -641,6 +664,76 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vai trò không thay đổi.'), backgroundColor: Colors.grey),
       );
+    }
+  }
+  // MỚI: Dialog chỉnh sửa điểm Loyalty
+  Future<void> _showEditLoyaltyPointsDialog(BuildContext context, String uid, String userName, int currentPoints) async {
+    _loyaltyPointsController.text = currentPoints.toString();
+    final String? newPointsStr = await showDialog<String>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text('Sửa điểm Loyalty cho "$userName"'),
+          content: TextField(
+            controller: _loyaltyPointsController,
+            keyboardType: TextInputType.number,
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.digitsOnly // Chỉ cho phép nhập số
+            ],
+            decoration: const InputDecoration(
+              labelText: 'Số điểm mới',
+              hintText: 'Nhập số điểm',
+              prefixIcon: Icon(Iconsax.medal_star),
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Hủy'),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+            ),
+            ElevatedButton(
+              child: const Text('Lưu'),
+              onPressed: () {
+                if (_loyaltyPointsController.text.trim().isNotEmpty) {
+                  final int? points = int.tryParse(_loyaltyPointsController.text.trim());
+                  if (points != null && points >= 0) {
+                    Navigator.of(dialogContext).pop(_loyaltyPointsController.text.trim());
+                  } else {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(content: Text('Số điểm không hợp lệ hoặc phải lớn hơn bằng 0.'), backgroundColor: TColors.warning),
+                    );
+                  }
+                } else {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    const SnackBar(content: Text('Số điểm không được để trống.'), backgroundColor: TColors.warning),
+                  );
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    if (newPointsStr != null) {
+      final int? newPoints = int.tryParse(newPointsStr);
+      if (newPoints != null && newPoints != currentPoints) {
+        try {
+          await _userService.updateUserLoyaltyPoints(uid, newPoints);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Đã cập nhật điểm Loyalty cho "$userName".'), backgroundColor: TColors.success),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi khi cập nhật điểm Loyalty: $e'), backgroundColor: TColors.error),
+          );
+        }
+      } else if (newPoints == currentPoints) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Số điểm Loyalty không thay đổi.'), backgroundColor: Colors.grey),
+        );
+      }
     }
   }
 }

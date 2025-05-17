@@ -32,13 +32,32 @@ class UserService {
         'updatedAt': Timestamp.now(), // Thời gian cập nhật hồ sơ (tùy chọn)
         'avatarUrl': '', // Nếu có avatar, có thể lưu URL ở đây
         'phoneNumber': '', // Nếu có số điện thoại, có thể lưu ở đây
-        'isBanned' : false, // Trạng thái bị cấm (nếu cần)
+        'isBanned' : false,
+        'loyaltyPoints': 0// Trạng thái bị cấm (nếu cần)
         // Thêm các trường khác (ví dụ: số điện thoại, avatarUrl...)
       });
       print("UserService: User profile created successfully for UID: $uid");
     } catch (e) {
       print("UserService Error (createUserProfile): $e");
       // Ném lại ngoại lệ để lớp gọi (ví dụ: RegisterDialog) có thể bắt và xử lý
+      throw e;
+    }
+  }
+
+  // --- MỚI: Phương thức cập nhật điểm khách hàng thân thiết ---
+  Future<void> updateUserLoyaltyPoints(String uid, int newPoints) async {
+    try {
+      // Kiểm tra điểm có hợp lệ không (ví dụ: không âm)
+      if (newPoints < 0) {
+        throw Exception("Điểm khách hàng thân thiết không thể là số âm.");
+      }
+      await usersCollection.doc(uid).update({
+        'loyaltyPoints': newPoints,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      print("UserService: User loyalty points updated to $newPoints for UID: $uid");
+    } catch (e) {
+      print("UserService Error (updateUserLoyaltyPoints): $e");
       throw e;
     }
   }
