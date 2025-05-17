@@ -1,87 +1,71 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CategoryModel {
-  final String id; // Document ID từ Firestore
+  final String id;
   String name;
+  String image;
   bool isFeatured;
+  DateTime? date; // MỚI: Thời gian tạo hoặc cập nhật cuối cùng
 
   CategoryModel({
     required this.id,
     required this.name,
-    this.isFeatured = false, // Giá trị mặc định nếu không được cung cấp
+    required this.image,
+    this.isFeatured = false,
+    this.date, // Thêm vào constructor
   });
 
-  /// Hàm static để tạo một đối tượng CategoryModel rỗng
-  /// Hữu ích cho việc khởi tạo hoặc làm giá trị mặc định
-  static CategoryModel empty() => CategoryModel(id: '', name: '', isFeatured: false);
+  static CategoryModel empty() => CategoryModel(id: '', name: '', image: '', isFeatured: false, date: null);
 
-  /// Chuyển đổi từ DocumentSnapshot (dữ liệu Firestore) sang CategoryModel object
-  factory CategoryModel.fromSnapshot(DocumentSnapshot<Map<String, dynamic>> snapshot) {
-    // Kiểm tra xem snapshot có dữ liệu không
-    if (snapshot.data() == null) {
-      print("Warning: Snapshot data is null for category document ID: ${snapshot.id}. Returning empty CategoryModel.");
-      return CategoryModel.empty(); // Trả về đối tượng rỗng nếu không có dữ liệu
-    }
-
-    final data = snapshot.data()!; // Đảm bảo data không null
-
-    return CategoryModel(
-      id: snapshot.id, // Lấy ID của document
-      name: data['name'] as String? ?? '', // Lấy 'name', nếu null thì trả về chuỗi rỗng
-      isFeatured: data['isFeatured'] as bool? ?? false, // Lấy 'isFeatured', nếu null thì mặc định là false
-    );
-  }
-
-  /// Chuyển đổi từ CategoryModel object sang Map để lưu vào Firestore
-  /// Lưu ý: 'id' không được bao gồm vì nó là ID của document, không phải là một trường bên trong document
-  Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'isFeatured': isFeatured,
-    };
-  }
-
-  /// (Tùy chọn) Hàm copyWith để dễ dàng tạo bản sao và cập nhật một vài thuộc tính
-  CategoryModel copyWith({
-    String? id,
-    String? name,
-    bool? isFeatured,
-  }) {
-    return CategoryModel(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      isFeatured: isFeatured ?? this.isFeatured,
-    );
-  }
-
-  //==================================================================
-  // HÀM MỚI: fromFirestore (cho withConverter)
-  //==================================================================
   factory CategoryModel.fromFirestore(
       DocumentSnapshot<Map<String, dynamic>> snapshot,
-      SnapshotOptions? options, // Tham số này là bắt buộc cho signature của fromFirestore
+      SnapshotOptions? options,
       ) {
     if (snapshot.data() == null) {
       print("Warning: Snapshot data is null for category document ID: ${snapshot.id}. Returning empty CategoryModel.");
       return CategoryModel.empty();
     }
-    final data = snapshot.data()!; // Đảm bảo data không null
-
+    final data = snapshot.data()!;
     return CategoryModel(
       id: snapshot.id,
       name: data['name'] as String? ?? '',
+      image: data['image'] as String? ?? '',
       isFeatured: data['isFeatured'] as bool? ?? false,
+      date: (data['date'] as Timestamp?)?.toDate(), // MỚI: Chuyển Timestamp sang DateTime
     );
   }
 
-  //==================================================================
-  // HÀM MỚI: toFirestore (cho withConverter)
-  //==================================================================
   Map<String, dynamic> toFirestore() {
     return {
       'name': name,
+      'image': image,
       'isFeatured': isFeatured,
-      // Không cần thêm 'id' ở đây vì nó là ID của document
+      // MỚI: Luôn sử dụng FieldValue.serverTimestamp() khi ghi
+      // để đảm bảo thời gian được đặt bởi server, tránh lệch múi giờ client.
+      // Điều này có nghĩa là mỗi khi bạn gọi set() hoặc update() với đối tượng này,
+      // trường 'date' trên Firestore sẽ được cập nhật thành thời gian hiện tại của server.
+      'date': FieldValue.serverTimestamp(),
     };
+  }
+
+  factory CategoryModel.fromSnapshot(DocumentSnapshot<Map<String, dynamic>> snapshot) =>
+      CategoryModel.fromFirestore(snapshot, null);
+
+  Map<String, dynamic> toJson() => toFirestore();
+
+  CategoryModel copyWith({
+    String? id,
+    String? name,
+    String? image,
+    bool? isFeatured,
+    DateTime? date, // MỚI
+  }) {
+    return CategoryModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      image: image ?? this.image,
+      isFeatured: isFeatured ?? this.isFeatured,
+      date: date ?? this.date, // MỚI
+    );
   }
 }

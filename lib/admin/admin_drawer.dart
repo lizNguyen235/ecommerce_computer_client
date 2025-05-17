@@ -12,6 +12,7 @@ enum AdminSection {
   orderManagement,
   couponManagement,
   customerSupport,
+  categoryManagement,
 }
 
 class AdminDrawer extends StatelessWidget {
@@ -61,6 +62,13 @@ class AdminDrawer extends StatelessWidget {
             title: 'Product Management',
             subtitle: 'Manage products and inventory',
             section: AdminSection.productManagement,
+            context: context,
+          ),
+          _buildDrawerItem(
+            icon: Iconsax.card_tick_1,
+            title: 'Category Management',
+            subtitle: 'Manage Categories',
+            section: AdminSection.categoryManagement,
             context: context,
           ),
           _buildDrawerItem(

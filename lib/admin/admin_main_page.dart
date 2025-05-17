@@ -1,3 +1,4 @@
+import 'package:ecommerce_computer_client/admin/category_management_screen.dart';
 import 'package:ecommerce_computer_client/admin/product_management_screen.dart';
 import 'package:ecommerce_computer_client/admin/user_management_screen.dart';
 import 'package:flutter/material.dart';
@@ -54,6 +55,8 @@ class _AdminMainPageState extends State<AdminMainPage> {
         return const CouponManagementScreen(); // Tạo widget này
       case AdminSection.customerSupport:
         return const CustomerSupportAdminScreen(); // Tạo widget này (giao diện chat cho admin)
+      case AdminSection.categoryManagement:
+        return const CategoryManagementScreen();
       default:
         return const DashboardScreen(); // Mặc định
     }
