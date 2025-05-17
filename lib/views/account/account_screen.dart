@@ -114,12 +114,47 @@ class AccountScreen extends StatelessWidget {
                     trailing: Icon(Iconsax.arrow_circle_right, size: 26),
                     onTap: () => Get.to(() => CartScreen()),
                   ),
-                  SettingMenuTile(
-                    icon: Iconsax.bag_tick,
-                    title: 'My Orders',
-                    subtitle: 'In-progress, completed and cancelled orders',
-                    trailing: Icon(Iconsax.arrow_circle_right, size: 26),
-                    onTap: () => Get.to(() => OrderScreen()),
+                  // SỬ DỤNG FUTUREBUILDER ĐỂ HIỂN THỊ "My Orders" CHO NGƯỜI DÙNG ĐÃ ĐĂNG NHẬP
+                  FutureBuilder<String>(
+                    future: user.getCurrentUserRole(), // Gọi Future để lấy vai trò người dùng
+                    builder: (context, snapshot) {
+                      // Trường hợp 1: Đang chờ dữ liệu
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        // return SizedBox(height: 50, child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+                        return SizedBox.shrink(); // Không hiển thị gì trong khi chờ
+                      }
+                      // Trường hợp 2: Có lỗi khi lấy vai trò (ví dụ: lỗi mạng)
+                      else if (snapshot.hasError) {
+                        print("Error fetching user role for My Orders: ${snapshot.error}");
+                        // Trong trường hợp lỗi, có thể bạn không muốn hiển thị "My Orders"
+                        // vì không xác định được trạng thái đăng nhập.
+                        return SizedBox.shrink();
+                      }
+                      // Trường hợp 3: Có dữ liệu vai trò
+                      else if (snapshot.hasData) {
+                        final userRole = snapshot.data; // userRole có thể là 'guest', 'user', 'admin', etc.
+
+                        // Logic: Chỉ hiển thị "My Orders" nếu người dùng KHÔNG phải là 'guest'
+                        if (userRole != null && userRole.toLowerCase() != 'guest') {
+                          return SettingMenuTile(
+                            icon: Iconsax.bag_tick,
+                            title: 'My Orders',
+                            subtitle: 'In-progress, completed and cancelled orders',
+                            trailing: Icon(Iconsax.arrow_circle_right, size: 26),
+                            onTap: () => Get.to(() => OrderScreen()),
+                          );
+                        } else {
+                          // Người dùng là 'guest' hoặc vai trò là null (coi như chưa đăng nhập/guest)
+                          // không hiển thị "My Orders"
+                          return SizedBox.shrink();
+                        }
+                      }
+                      // Trường hợp 4: Không có dữ liệu vai trò (Future trả về null mà không lỗi)
+                      // Coi như người dùng chưa đăng nhập hoặc là guest.
+                      else {
+                        return SizedBox.shrink();
+                      }
+                    },
                   ),
                   SettingMenuTile(
                     icon: Iconsax.discount_shape,
