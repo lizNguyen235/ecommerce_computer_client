@@ -6,6 +6,7 @@ import 'package:ecommerce_computer_client/utils/sizes.dart';
 import 'package:ecommerce_computer_client/views/address/address_screen.dart';
 import 'package:ecommerce_computer_client/views/cart/cart_screen.dart';
 import 'package:ecommerce_computer_client/views/order/order_screen.dart';
+import 'package:ecommerce_computer_client/views/profile/edit_profile_screen.dart';
 import 'package:ecommerce_computer_client/views/profile/profile_screen.dart';
 import 'package:ecommerce_computer_client/widgets/primary_header_container.dart';
 import 'package:ecommerce_computer_client/widgets/setting_menu_tile.dart';
@@ -80,7 +81,7 @@ class AccountScreen extends StatelessWidget {
                         // Handle edit profile action
                       },
                     ),
-                    onTap: () => Get.to(() => ProfileScreen()),
+                    onTap: () => Get.to(() => MyProfileScreen()),
                   ),
                   const SizedBox(height: Sizes.spaceBtwSections),
                 ],

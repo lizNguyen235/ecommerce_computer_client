@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../../models/message.dart'; // Điều chỉnh đường dẫn nếu cần
 import './ConfigService.dart'; // Điều chỉnh đường dẫn nếu cần
+import 'package:flutter/foundation.dart' show kIsWeb; // For kIsWeb check
 // import '../models/conversation_summary.dart'; // Nếu bạn có model này cho admin
 
 class ChatService {
