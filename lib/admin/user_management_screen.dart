@@ -125,11 +125,27 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        fullName,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Row( // Mới: Gom tên và nút sửa tên
+                        children: [
+                          Expanded(
+                            child: Text(
+                              fullName,
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (!isCurrentUserTheAdminViewing) // Chỉ admin khác mới sửa được
+                            SizedBox(
+                              height: 24, width: 24,
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                icon: const Icon(Iconsax.edit_2, size: Sizes.iconSm, color: TColors.primary),
+                                tooltip: 'Sửa tên',
+                                onPressed: () => _showEditFullNameDialog(context, uid, userData['fullName'] ?? ''),
+                              ),
+                            ),
+                        ],
                       ),
                       Text(
                         email,
@@ -494,6 +510,63 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _showEditFullNameDialog(BuildContext context, String uid, String currentFullName) async {
+    _fullNameController.text = currentFullName; // Đặt tên hiện tại vào controller
+    final String? newFullName = await showDialog<String>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Sửa họ và tên người dùng'), // Tiêu đề chung hơn vì userName có thể thay đổi
+          content: TextField(
+            controller: _fullNameController,
+            textCapitalization: TextCapitalization.words, // Tự động viết hoa chữ cái đầu mỗi từ
+            decoration: const InputDecoration(
+              labelText: 'Họ và tên mới',
+              hintText: 'Nhập họ và tên',
+              prefixIcon: Icon(Iconsax.user_edit),
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Hủy'),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+            ),
+            ElevatedButton(
+              child: const Text('Lưu'),
+              onPressed: () {
+                if (_fullNameController.text.trim().isNotEmpty) {
+                  Navigator.of(dialogContext).pop(_fullNameController.text.trim());
+                } else {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    const SnackBar(content: Text('Họ và tên không được để trống'), backgroundColor: TColors.warning),
+                  );
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    if (newFullName != null && newFullName != currentFullName) {
+      try {
+        await _userService.updateUserFullName(uid, newFullName);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Đã cập nhật họ và tên cho người dùng.'), backgroundColor: TColors.success),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi cập nhật họ và tên: $e'), backgroundColor: TColors.error),
+        );
+      }
+    } else if (newFullName == currentFullName) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Họ và tên không thay đổi.'), backgroundColor: Colors.grey),
+      );
     }
   }
 
