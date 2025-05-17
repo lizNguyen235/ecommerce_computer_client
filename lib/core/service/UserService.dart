@@ -33,7 +33,8 @@ class UserService {
         'avatarUrl': '', // Nếu có avatar, có thể lưu URL ở đây
         'phoneNumber': '', // Nếu có số điện thoại, có thể lưu ở đây
         'isBanned' : false,
-        'loyaltyPoints': 0// Trạng thái bị cấm (nếu cần)
+        'loyaltyPoints': 0,// Trạng thái bị cấm (nếu cần)
+        'chooseAddress': 0, // Địa chỉ giao hàng mặc định (nếu có nhiều địa chỉ)
         // Thêm các trường khác (ví dụ: số điện thoại, avatarUrl...)
       });
       print("UserService: User profile created successfully for UID: $uid");

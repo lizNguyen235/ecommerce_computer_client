@@ -125,4 +125,52 @@ class AuthService {
   Stream<User?> get authStateChanges {
     return _auth.authStateChanges();
   }
+
+
+  Future<void> signInAnonymously() async {
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance.signInAnonymously();
+      User? user = userCredential.user;
+
+      if (user != null) {
+        print('Đăng nhập ẩn danh thành công! UID: ${user.uid}');
+      }
+    } catch (e) {
+      print('Lỗi khi đăng nhập ẩn danh: $e');
+    }
+  }
+
+  Future<void> upgradeAnonymousUserToEmail({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+
+      if (user == null || !user.isAnonymous) {
+        print('Người dùng hiện tại không ở chế độ ẩn danh');
+        return;
+      }
+
+      // Tạo thông tin đăng nhập email/password
+      final credential = EmailAuthProvider.credential(
+        email: email,
+        password: password,
+      );
+
+      // Liên kết với người dùng hiện tại
+      UserCredential result = await user.linkWithCredential(credential);
+
+      print("Nâng cấp tài khoản thành công! UID: ${result.user?.uid}");
+      print("Email mới: ${result.user?.email}");
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'email-already-in-use') {
+        print("Email này đã được sử dụng bởi tài khoản khác.");
+      } else {
+        print('Lỗi khi nâng cấp tài khoản: ${e.message}');
+      }
+    } catch (e) {
+      print('Lỗi không xác định: $e');
+    }
+  }
 }

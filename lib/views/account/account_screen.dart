@@ -5,6 +5,7 @@ import 'package:ecommerce_computer_client/core/service/AuthService.dart';
 import 'package:ecommerce_computer_client/utils/sizes.dart';
 import 'package:ecommerce_computer_client/views/address/address_screen.dart';
 import 'package:ecommerce_computer_client/views/cart/cart_screen.dart';
+import 'package:ecommerce_computer_client/views/login/login.dart';
 import 'package:ecommerce_computer_client/views/order/order_screen.dart';
 import 'package:ecommerce_computer_client/views/profile/profile_screen.dart'; // MyProfileScreen
 import 'package:ecommerce_computer_client/widgets/primary_header_container.dart';
@@ -193,6 +194,22 @@ class _AccountScreenState extends State<AccountScreen> {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: Sizes.spaceBtwItems),
+                  if (_currentUser == null || _currentUser!.isAnonymous)
+                    SettingMenuTile(
+                      icon: Iconsax.login,
+                      title: 'Đăng nhập',
+                      subtitle: 'Đăng nhập hoặc đăng kí ở đây',
+                      trailing: const Icon(Iconsax.arrow_circle_right, size: 26),
+                      onTap: () => Get.to(() => LoginDialog()),
+                    )
+                  else if (_currentRole == null && _currentUser != null) // Đang chờ load role, nhưng đã đăng nhập
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: SizedBox(height: 20, child: LinearProgressIndicator(color: TColors.primary.withOpacity(0.5), backgroundColor: TColors.light)),
+                    )
+                  else
+                    const SizedBox.shrink(),
+
 
                   SettingMenuTile(
                     icon: Iconsax.safe_home,
