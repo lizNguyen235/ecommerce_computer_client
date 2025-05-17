@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
@@ -110,51 +111,41 @@ class _SupportChatPageState extends State<SupportChatPage> {
     }
   }
 
-  Future<void> _sendImageMessage() async {
-    if (_isSendingMessage) return;
+  // Giả sử bạn có một hàm _pickAndSendImage() trong widget chat của người dùng
 
+  Future<void> _pickAndSendImage() async {
     final picker = ImagePicker();
-    // Cân nhắc dùng pickImage nếu chỉ cho gửi 1 ảnh mỗi lần để đơn giản hơn
-    final List<XFile> pickedFiles = await picker.pickMultiImage(
-      imageQuality: 70,
-    ); // Giảm chất lượng ảnh
+    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery /* hoặc camera */);
 
-    if (pickedFiles.isEmpty) {
-      print("SupportChatPage: No images selected.");
-      return;
-    }
+    if (pickedFile == null) return;
 
-    if (mounted) setState(() => _isSendingMessage = true);
+    // setState(() => _isSending = true); // Cập nhật UI nếu cần
 
     try {
-      for (final pickedFile in pickedFiles) {
-        File imageFile = File(pickedFile.path);
-        // Kiểm tra kích thước file trước khi gửi (ví dụ < 5MB)
-        if (await imageFile.length() > 5 * 1024 * 1024) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text("Ảnh '${pickedFile.name}' quá lớn (tối đa 5MB)."),
-              ),
-            );
-          }
-          continue; // Bỏ qua file này
-        }
+      dynamic imageDataToSend;
+      String fileName = pickedFile.name;
 
-        await _chatService.sendMessage(imageFile: imageFile);
+      if (kIsWeb) {
+        imageDataToSend = await pickedFile.readAsBytes();
+        // Kiểm tra kích thước bytes nếu cần
+      } else {
+        File imageFile = File(pickedFile.path);
+        // Kiểm tra kích thước file nếu cần
+        imageDataToSend = imageFile;
       }
-      print("SupportChatPage: Selected images processed.");
-    } catch (e) {
-      print(
-        "SupportChatPage: Error sending one or more images: ${e.toString()}",
+
+      // Gọi hàm sendMessage của ChatService
+      await _chatService.sendMessage( // Giả sử _chatService là instance của ChatService
+        imageData: imageDataToSend,
+        imageFileName: fileName,
       );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Gửi ảnh thất bại: ${e.toString()}")),
-        );
-      }
+    } catch (e) {
+      // Hiển thị lỗi cho người dùng
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Lỗi gửi ảnh: ${e.toString()}")),
+      );
     } finally {
-      if (mounted) setState(() => _isSendingMessage = false);
+      // setState(() => _isSending = false);
     }
   }
 
@@ -462,7 +453,7 @@ class _SupportChatPageState extends State<SupportChatPage> {
                   .end, // Căn các item theo cuối nếu TextField nhiều dòng
           children: [
             IconButton(
-              onPressed: _isSendingMessage ? null : _sendImageMessage,
+              onPressed: _isSendingMessage ? null : _pickAndSendImage,
               icon: Icon(
                 Iconsax.gallery_add,
                 color: _isSendingMessage ? Colors.grey : TColors.primary,

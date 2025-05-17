@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../../models/message.dart'; // Điều chỉnh đường dẫn nếu cần
 import './ConfigService.dart'; // Điều chỉnh đường dẫn nếu cần
-import 'package:flutter/foundation.dart' show kIsWeb; // For kIsWeb check
+import 'package:flutter/foundation.dart' show Uint8List, kIsWeb; // For kIsWeb check
 // import '../models/conversation_summary.dart'; // Nếu bạn có model này cho admin
 
 class ChatService {
@@ -53,10 +53,12 @@ class ChatService {
     });
   }
 
+
   // --- Gửi tin nhắn (text hoặc image) từ User tới Admin ---
   Future<void> sendMessage({
     String? text,
-    File? imageFile,
+    dynamic imageData,     // THAY ĐỔI: Có thể là File (mobile) hoặc Uint8List (web)
+    String? imageFileName, // THAY ĐỔI: Tên file gốc, quan trọng cho web và contentType
   }) async {
     User? currentUser = _auth.getCurrentUser();
     if (currentUser == null) {
@@ -65,45 +67,90 @@ class ChatService {
 
     final String adminUid = await _getRequiredAdminUid(); // Lấy admin UID
 
-    if ((text == null || text.trim().isEmpty) && imageFile == null) {
+    if ((text == null || text.trim().isEmpty) && imageData == null) {
       throw Exception("Message text or image must be provided.");
     }
 
     String senderUid = currentUser.uid;
-    String senderDisplayName = currentUser.displayName ?? currentUser.email ?? 'Anonymous User';
+    // Lấy thông tin từ profile Firestore để có tên và avatar chính xác nhất
+    // Nếu không có, mới dùng từ Firebase Auth
+    String senderDisplayName = currentUser.displayName ?? currentUser.email ?? 'Người dùng ẩn danh';
     String? senderPhotoUrl = currentUser.photoURL;
+
+    // Cố gắng lấy thông tin profile từ Firestore để cập nhật displayName và photoUrl
+    try {
+      DocumentSnapshot userProfileDoc = await _firestore.collection('users').doc(senderUid).get();
+      if (userProfileDoc.exists && userProfileDoc.data() != null) {
+        final profileData = userProfileDoc.data() as Map<String, dynamic>;
+        senderDisplayName = profileData['fullName'] ?? senderDisplayName;
+        senderPhotoUrl = profileData['avatarUrl'] ?? senderPhotoUrl;
+      }
+    } catch(e) {
+      print("ChatService: Could not fetch user profile for display name/photo, using Auth info. Error: $e");
+    }
+
 
     Map<String, dynamic> messageData = {
       'senderId': senderUid,
       'timestamp': FieldValue.serverTimestamp(),
+      // 'readByAdmin': false, // Admin chưa đọc
+      // 'readByUser': true,   // User vừa gửi nên đã đọc
     };
 
     String messageType;
     String lastMessageContentForChatDoc;
 
-    if (imageFile != null) {
+    if (imageData != null && imageFileName != null) {
       messageType = 'image';
-      lastMessageContentForChatDoc = 'Sent an image'; // Nội dung cho lastMessage
+      lastMessageContentForChatDoc = '[Hình ảnh]'; // Nội dung cho lastMessage
       try {
-        String filePath = 'chat_images/${currentUser.uid}/${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
-        UploadTask uploadTask = _storage.ref().child(filePath).putFile(imageFile);
+        // Tạo đường dẫn file trên Firebase Storage
+        // Sử dụng imageFileName để có phần mở rộng file gốc
+        String storageFileName = '${DateTime.now().millisecondsSinceEpoch}_${imageFileName.replaceAll(RegExp(r'[^\w\.]'), '_')}'; // Sanitize filename
+        String filePath = 'chat_images/$senderUid/user_uploads/$storageFileName'; // Phân biệt thư mục user và admin uploads
+        Reference ref = _storage.ref().child(filePath);
+
+        UploadTask uploadTask;
+        String contentType = 'image/jpeg'; // Mặc định
+        if (imageFileName.toLowerCase().endsWith('.png')) {
+          contentType = 'image/png';
+        } else if (imageFileName.toLowerCase().endsWith('.gif')) {
+          contentType = 'image/gif';
+        }
+        // Thêm các loại khác nếu cần
+
+        final metadata = SettableMetadata(contentType: contentType);
+
+        if (kIsWeb && imageData is Uint8List) {
+          uploadTask = ref.putData(imageData, metadata);
+        } else if (!kIsWeb && imageData is File) {
+          uploadTask = ref.putFile(imageData, metadata);
+        } else {
+          throw Exception("Invalid image data type or platform mismatch for user message.");
+        }
+
         TaskSnapshot taskSnapshot = await uploadTask;
         String imageUrl = await taskSnapshot.ref.getDownloadURL();
 
         messageData['type'] = messageType;
         messageData['imageUrl'] = imageUrl;
+        // Không cần messageData['text'] nếu là tin nhắn ảnh
       } catch (e) {
-        print("ChatService: Error uploading image: ${e.toString()}");
-        throw Exception("Failed to upload image: ${e.toString()}");
+        print("ChatService: Error uploading user image: ${e.toString()}");
+        throw Exception("Failed to upload user image: ${e.toString()}");
       }
     } else {
       messageType = 'text';
       messageData['type'] = messageType;
-      messageData['text'] = text!.trim(); // Đã kiểm tra text != null ở trên
+      messageData['text'] = text!.trim();
       lastMessageContentForChatDoc = text.trim();
+      if (lastMessageContentForChatDoc.length > 100) {
+        lastMessageContentForChatDoc = '${lastMessageContentForChatDoc.substring(0, 97)}...';
+      }
     }
 
     try {
+      // Document chat vẫn dùng senderUid (UID của khách hàng) làm ID
       DocumentReference chatDocRef = _firestore.collection('chats').doc(senderUid);
 
       // Thêm tin nhắn vào subcollection
@@ -112,43 +159,45 @@ class ChatService {
       // Cập nhật thông tin cuộc trò chuyện chính (document cha)
       await chatDocRef.set(
         {
-          'adminId': adminUid,
-          'userId': senderUid, // UID của khách hàng
-          'userName': senderDisplayName,
-          'userPhotoUrl': senderPhotoUrl,
+          'adminId': adminUid,             // UID của admin (người nhận tiềm năng)
+          'userId': senderUid,             // UID của khách hàng (người gửi)
+          'userName': senderDisplayName,   // Tên của khách hàng
+          'userPhotoUrl': senderPhotoUrl,  // Ảnh đại diện của khách hàng (nếu có)
           'lastMessage': lastMessageContentForChatDoc,
           'lastMessageTimestamp': FieldValue.serverTimestamp(),
-          'lastMessageBy': senderUid, // Ai gửi tin nhắn cuối
-          'adminUnread': true, // Đánh dấu admin chưa đọc khi user gửi
-          'userUnread': false, // User vừa gửi nên không unread cho user
-          // 'adminUnreadCount': FieldValue.increment(1), // Tùy chọn dùng counter
+          'lastMessageBy': senderUid,      // Ai gửi tin nhắn cuối (customer uid)
+          'adminUnread': true,             // Đánh dấu admin chưa đọc khi user gửi
+          'userUnread': false,             // User vừa gửi nên không unread cho user
+          // 'adminUnreadCount': FieldValue.increment(1),
+          // 'userUnreadCount': 0, // Reset unread count của user
         },
-        SetOptions(merge: true), // Dùng merge để tạo mới nếu chưa có, hoặc cập nhật
+        SetOptions(merge: true), // Dùng merge để tạo mới nếu chưa có, hoặc cập nhật các trường đã có
       );
 
       print("ChatService: Message sent successfully by user ${currentUser.uid}.");
     } catch (e) {
       print("ChatService: Error sending message to Firestore: ${e.toString()}");
-      throw Exception("Failed to send message: ${e.toString()}");
+      throw Exception("Failed to send message to Firestore: ${e.toString()}");
     }
   }
+
 
   // --- Phương thức gửi tin nhắn TỪ ADMIN TỚI NGƯỜI DÙNG ---
   // Phương thức này sẽ được gọi từ phía Admin App.
   Future<void> sendAdminMessage({
     required String targetUserUid, // UID của người dùng mà admin đang trả lời
     String? text,
-    File? imageFile,
+    dynamic imageData,     // THAY ĐỔI: Có thể là File (mobile) hoặc Uint8List (web)
+    String? imageFileName, // THAY ĐỔI: Tên file gốc, quan trọng cho web và contentType
   }) async {
-    User? adminUser = _auth.getCurrentUser(); // Lấy user hiện tại (phía admin app)
+    User? adminUser = _auth.getCurrentUser();
     final String currentAdminUidFromConfig = await _getRequiredAdminUid();
 
-    // Đảm bảo người gửi là admin được chỉ định
     if (adminUser == null || adminUser.uid != currentAdminUidFromConfig) {
       throw Exception("Permission denied. Must be the designated admin to send messages.");
     }
 
-    if ((text == null || text.trim().isEmpty) && imageFile == null) {
+    if ((text == null || text.trim().isEmpty) && imageData == null) {
       throw Exception("Message text or image must be provided for admin message.");
     }
 
@@ -156,24 +205,52 @@ class ChatService {
 
     Map<String, dynamic> messageData = {
       'senderId': senderUid,
-      'timestamp': FieldValue.serverTimestamp(),
+      'timestamp': FieldValue.serverTimestamp(), // Nên dùng serverTimestamp
+      // 'readByAdmin': true, // Admin vừa gửi nên đã đọc
+      // 'readByUser': false, // User chưa đọc
     };
 
     String messageType;
     String lastMessageContentForChatDoc;
 
-    if (imageFile != null) {
+    if (imageData != null && imageFileName != null) {
       messageType = 'image';
-      lastMessageContentForChatDoc = 'Admin sent an image';
+      // Nội dung cho lastMessage nên ngắn gọn khi là ảnh
+      lastMessageContentForChatDoc = '[Hình ảnh]'; // Hoặc "Admin đã gửi một hình ảnh"
+
       try {
-        // Lưu ảnh vào thư mục của user, có thể có tiền tố admin để phân biệt
-        String filePath = 'chat_images/$targetUserUid/admin_${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
-        UploadTask uploadTask = _storage.ref().child(filePath).putFile(imageFile);
+        // Đường dẫn file trên Firebase Storage
+        // Sử dụng imageFileName để có phần mở rộng file gốc
+        String storageFileName = '${DateTime.now().millisecondsSinceEpoch}_${imageFileName.replaceAll(RegExp(r'[^\w\.]'), '_')}'; // Sanitize filename
+        String filePath = 'chat_images/$targetUserUid/admin_uploads/$storageFileName';
+        Reference ref = _storage.ref().child(filePath);
+
+        UploadTask uploadTask;
+        // Xác định ContentType dựa trên phần mở rộng của imageFileName
+        String contentType = 'image/jpeg'; // Mặc định
+        if (imageFileName.toLowerCase().endsWith('.png')) {
+          contentType = 'image/png';
+        } else if (imageFileName.toLowerCase().endsWith('.gif')) {
+          contentType = 'image/gif';
+        }
+        // Bạn có thể thêm các loại khác nếu cần
+
+        final metadata = SettableMetadata(contentType: contentType);
+
+        if (kIsWeb && imageData is Uint8List) {
+          uploadTask = ref.putData(imageData, metadata);
+        } else if (!kIsWeb && imageData is File) {
+          uploadTask = ref.putFile(imageData, metadata);
+        } else {
+          throw Exception("Invalid image data type or platform mismatch.");
+        }
+
         TaskSnapshot taskSnapshot = await uploadTask;
         String imageUrl = await taskSnapshot.ref.getDownloadURL();
 
         messageData['type'] = messageType;
         messageData['imageUrl'] = imageUrl;
+        // Không cần messageData['text'] nếu là tin nhắn ảnh, trừ khi bạn muốn có caption
       } catch (e) {
         print("ChatService: Error uploading admin image: ${e.toString()}");
         throw Exception("Failed to upload admin image: ${e.toString()}");
@@ -183,35 +260,45 @@ class ChatService {
       messageData['type'] = messageType;
       messageData['text'] = text!.trim();
       lastMessageContentForChatDoc = text.trim();
+      // Cắt bớt lastMessageContentForChatDoc nếu quá dài
+      if (lastMessageContentForChatDoc.length > 100) {
+        lastMessageContentForChatDoc = '${lastMessageContentForChatDoc.substring(0, 97)}...';
+      }
     }
 
     // Lưu tin nhắn vào subcollection 'messages' của document chat của người dùng targetUserUid
     try {
+      // Tạo DocumentReference cho cuộc trò chuyện
+      // ID của document chat chính là UID của người dùng (customer)
       DocumentReference chatDocRef = _firestore.collection('chats').doc(targetUserUid);
 
+      // Thêm tin nhắn mới vào subcollection 'messages'
       await chatDocRef.collection('messages').add(messageData);
 
-      // Cập nhật thông tin cuộc trò chuyện chính
+      // Cập nhật thông tin cuộc trò chuyện chính (conversation summary)
       // Sử dụng merge:true để không ghi đè các trường như userName, userPhotoUrl
-      // mà có thể user đã tạo trước đó.
+      // mà người dùng có thể đã tạo/cập nhật.
       await chatDocRef.set(
         {
-          'adminId': senderUid, // adminId là người gửi (admin)
-          'userId': targetUserUid, // userId là người nhận (customer)
+          'adminId': senderUid,          // UID của admin tham gia cuộc trò chuyện
+          'userId': targetUserUid,       // UID của người dùng (customer)
           'lastMessage': lastMessageContentForChatDoc,
           'lastMessageTimestamp': FieldValue.serverTimestamp(),
-          'lastMessageBy': senderUid, // Admin gửi
-          'adminUnread': false, // Admin vừa gửi, không unread cho admin
-          'userUnread': true, // Đánh dấu user chưa đọc
-          // 'userUnreadCount': FieldValue.increment(1), // Tùy chọn
+          'lastMessageBy': senderUid,    // Ai là người gửi tin nhắn cuối cùng (admin uid)
+          'adminUnread': false,          // Admin vừa gửi, nên không có tin nhắn chưa đọc cho admin
+          'userUnread': true,            // Đánh dấu là người dùng (customer) chưa đọc tin nhắn này
+          // 'userName': ... // Nên được set khi user bắt đầu chat lần đầu hoặc cập nhật từ profile user
+          // 'userPhotoUrl': ... // Tương tự
+          // 'adminUnreadCount': 0, // Reset unread count của admin
+          // 'userUnreadCount': FieldValue.increment(1), // Tăng unread count của user
         },
-        SetOptions(merge: true),
+        SetOptions(merge: true), // Quan trọng: merge để không ghi đè dữ liệu hiện có
       );
 
       print("ChatService: Admin message sent successfully to user $targetUserUid.");
     } catch (e) {
       print("ChatService: Error sending admin message to Firestore: ${e.toString()}");
-      throw Exception("Failed to send admin message: ${e.toString()}");
+      throw Exception("Failed to send admin message to Firestore: ${e.toString()}");
     }
   }
 
