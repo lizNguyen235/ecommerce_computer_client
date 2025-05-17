@@ -64,7 +64,7 @@ class ProductModel {
       'stock': stock,
       'price': price,
       'title': title,
-      'date': date != null ? Timestamp.fromDate(date!) : FieldValue.serverTimestamp(),
+      'date': FieldValue.serverTimestamp(),
       'salePrice': validSalePriceRatio, // Lưu TỶ LỆ giảm giá vào trường 'salePrice' của Firestore
       'thumbnail': thumbnail,
       'isFeatured': isFeatured ?? false,

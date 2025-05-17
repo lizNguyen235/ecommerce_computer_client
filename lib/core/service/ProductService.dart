@@ -72,7 +72,7 @@ class ProductService {
         finalThumbnailUrl = await _uploadImage(
           imageData: imageData,
           fileName: uploadFileName,
-          folderPath: 'products/thumbnails',
+          folderPath: '/product_images/thumbnails',
         );
       }
 
