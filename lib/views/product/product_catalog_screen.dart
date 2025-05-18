@@ -240,6 +240,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
               }
               return CustomGridLayout(
                 scrollController: scrollController,
+                crossAxisCount: context.screenWidth > 1200 ? 6 : context.screenWidth > 992 ? 5 : context.screenWidth > 768 ? 4 : context.screenWidth > 600 ? 3 : 2,
                 itemCount: controller.allProducts.length +
                     (controller.isLoadingAll.value && controller.hasMoreAll.value ? 1 : 0),
                 itemBuilder: (context, index) {

@@ -19,11 +19,10 @@ class CheckoutScreen extends StatelessWidget {
     final CheckoutController controller = Get.put(CheckoutController());
     final CartController cartController = Get.find<CartController>();
 
-
     return Scaffold(
       backgroundColor: whiteColor,
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Checkout',
           style: TextStyle(
             fontSize: 24,
@@ -52,7 +51,7 @@ class CheckoutScreen extends StatelessWidget {
                         width: 60,
                         height: 60,
                         fit: BoxFit.cover,
-                        padding: EdgeInsets.all(Sizes.sm),
+                        padding: const EdgeInsets.all(Sizes.sm),
                         backgroundColor: Colors.grey.shade200,
                         isNetworkImage: true,
                       ),
@@ -72,7 +71,7 @@ class CheckoutScreen extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(width: Sizes.spaceBtwItems / 2),
-                                Icon(Iconsax.verify5, color: Colors.blue, size: 14),
+                                const Icon(Iconsax.verify5, color: Colors.blue, size: 14),
                               ],
                             ),
                             const SizedBox(height: 4),
@@ -134,7 +133,7 @@ class CheckoutScreen extends StatelessWidget {
                         Flexible(
                           child: DropdownButton<String>(
                             isExpanded: true,
-                            hint: Text(
+                            hint: const Text(
                               'Select a coupon',
                               style: TextStyle(
                                 fontSize: 16,
@@ -149,7 +148,8 @@ class CheckoutScreen extends StatelessWidget {
                               return DropdownMenuItem<String>(
                                 value: coupon['code'],
                                 child: Text(
-                                  '${coupon['code']} (-\$${coupon['discountAmount'].toStringAsFixed(0)}, $remainingUses uses left)', style: TextStyle(
+                                  '${coupon['code']} (-\$${coupon['discountAmount'].toStringAsFixed(0)}, $remainingUses uses left)',
+                                  style: const TextStyle(
                                     fontSize: 16,
                                     color: Colors.black,
                                   ),
@@ -173,11 +173,11 @@ class CheckoutScreen extends StatelessWidget {
                           padding: const EdgeInsets.only(top: Sizes.sm),
                           child: Text(
                             controller.couponError.value,
-                            style: TextStyle(color: Colors.red, fontSize: 14),
+                            style: const TextStyle(color: Colors.red, fontSize: 14),
                           ),
                         );
                       }
-                      return SizedBox.shrink();
+                      return const SizedBox.shrink();
                     }),
                   ],
                 ),
@@ -194,7 +194,7 @@ class CheckoutScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
+                        const Text(
                           'Loyalty Points',
                           style: TextStyle(
                             fontFamily: bold,
@@ -203,7 +203,7 @@ class CheckoutScreen extends StatelessWidget {
                           ),
                         ),
                         Obx(() => Text(
-                          'Available: ${controller.loyaltyPoints.value.toStringAsFixed(2)} points (\$${(controller.loyaltyPoints.value).toStringAsFixed(0)})',
+                          'Available: ${controller.loyaltyPoints.value} points (\$${controller.loyaltyPoints.value})',
                           style: TextStyle(
                             fontSize: 14,
                             fontFamily: regular,
@@ -217,14 +217,14 @@ class CheckoutScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: TextFormField(
-                            decoration: InputDecoration(
+                            decoration: const InputDecoration(
                               labelText: 'Points to Redeem',
                               border: OutlineInputBorder(),
                               hintText: 'Enter points to redeem',
                             ),
                             keyboardType: TextInputType.number,
                             onChanged: (value) {
-                              final points = double.tryParse(value) ?? 0;
+                              final points = int.tryParse(value) ?? 0; // Parse as int
                               controller.applyLoyaltyPoints(points);
                             },
                           ),
@@ -234,7 +234,7 @@ class CheckoutScreen extends StatelessWidget {
                           onPressed: () {
                             final textField = context.findAncestorWidgetOfExactType<TextFormField>();
                             if (textField != null && textField.controller?.text.isNotEmpty == true) {
-                              final points = double.tryParse(textField.controller!.text) ?? 0;
+                              final points = int.tryParse(textField.controller!.text) ?? 0; // Parse as int
                               controller.applyLoyaltyPoints(points);
                             }
                           },
@@ -257,12 +257,12 @@ class CheckoutScreen extends StatelessWidget {
                         return Padding(
                           padding: const EdgeInsets.only(top: Sizes.sm),
                           child: Text(
-                            'Loyalty Points Discount: ${controller.pointsToRedeem.value.toStringAsFixed(2)} points (\$${controller.pointAmount.value.toStringAsFixed(0)})',
-                            style: TextStyle(color: Colors.green, fontSize: 14),
+                            'Loyalty Points Discount: ${controller.pointsToRedeem.value} points (\$${controller.pointAmount.value.toStringAsFixed(0)})',
+                            style: const TextStyle(color: Colors.green, fontSize: 14),
                           ),
                         );
                       }
-                      return SizedBox.shrink();
+                      return const SizedBox.shrink();
                     }),
                   ],
                 ),
@@ -278,7 +278,7 @@ class CheckoutScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
+                        const Text(
                           'Subtotal',
                           style: TextStyle(
                             fontSize: 16,
@@ -288,7 +288,7 @@ class CheckoutScreen extends StatelessWidget {
                         ),
                         Obx(() => Text(
                           '\$${controller.subtotal.value.toStringAsFixed(2)}',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 16,
                             fontFamily: regular,
                             color: Colors.black,
@@ -300,7 +300,7 @@ class CheckoutScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
+                        const Text(
                           'Tax (5%)',
                           style: TextStyle(
                             fontSize: 16,
@@ -310,7 +310,7 @@ class CheckoutScreen extends StatelessWidget {
                         ),
                         Obx(() => Text(
                           '\$${controller.tax.value.toStringAsFixed(2)}',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 14,
                             fontFamily: regular,
                             color: Colors.black,
@@ -322,7 +322,7 @@ class CheckoutScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
+                        const Text(
                           'Shipping Fee',
                           style: TextStyle(
                             fontSize: 16,
@@ -332,7 +332,7 @@ class CheckoutScreen extends StatelessWidget {
                         ),
                         Obx(() => Text(
                           '\$${controller.shippingFee.value.toStringAsFixed(2)}',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 14,
                             fontFamily: regular,
                             color: Colors.black,
@@ -346,7 +346,7 @@ class CheckoutScreen extends StatelessWidget {
                         return Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
+                            const Text(
                               'Coupon Discount',
                               style: TextStyle(
                                 fontSize: 16,
@@ -356,7 +356,7 @@ class CheckoutScreen extends StatelessWidget {
                             ),
                             Text(
                               '-\$${controller.discountAmount.value.toStringAsFixed(2)}',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 14,
                                 fontFamily: regular,
                                 color: Colors.black,
@@ -365,14 +365,14 @@ class CheckoutScreen extends StatelessWidget {
                           ],
                         );
                       }
-                      return SizedBox.shrink();
+                      return const SizedBox.shrink();
                     }),
                     Obx(() {
                       if (controller.pointAmount.value > 0) {
                         return Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
+                            const Text(
                               'Loyalty Points Discount',
                               style: TextStyle(
                                 fontSize: 16,
@@ -382,7 +382,7 @@ class CheckoutScreen extends StatelessWidget {
                             ),
                             Text(
                               '-\$${controller.pointAmount.value.toStringAsFixed(0)}',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 14,
                                 fontFamily: regular,
                                 color: Colors.black,
@@ -391,13 +391,13 @@ class CheckoutScreen extends StatelessWidget {
                           ],
                         );
                       }
-                      return SizedBox.shrink();
+                      return const SizedBox.shrink();
                     }),
                     const SizedBox(height: Sizes.spaceBtwItems / 2),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
+                        const Text(
                           'Order Total',
                           style: TextStyle(
                             fontSize: 16,
@@ -407,7 +407,7 @@ class CheckoutScreen extends StatelessWidget {
                         ),
                         Obx(() => Text(
                           '\$${controller.totalAmount.value.toStringAsFixed(2)}',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 17,
                             fontFamily: bold,
                             color: Colors.black,
@@ -425,7 +425,7 @@ class CheckoutScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
+                            const Text(
                               'Shipping Address',
                               style: TextStyle(
                                 fontFamily: bold,
@@ -436,7 +436,7 @@ class CheckoutScreen extends StatelessWidget {
                             TextButton(
                               onPressed: () async {
                                 await Get.to(() => const AddressScreen());
-                                controller.loadUserData(); // Cập nhật địa chỉ sau khi chọn
+                                controller.loadUserData(); // Update address after selection
                               },
                               child: Text(
                                 'Change',
@@ -452,7 +452,7 @@ class CheckoutScreen extends StatelessWidget {
                         const SizedBox(height: Sizes.spaceBtwItems / 1.5),
                         Obx(() => Text(
                           controller.recipientName.value,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 16,
                             fontFamily: semibold,
                             color: Colors.black,
@@ -469,7 +469,7 @@ class CheckoutScreen extends StatelessWidget {
                             const SizedBox(width: Sizes.spaceBtwItems),
                             Text(
                               controller.phoneNumber.value,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 14,
                                 fontFamily: regular,
                                 color: Colors.black,
@@ -489,7 +489,7 @@ class CheckoutScreen extends StatelessWidget {
                             Flexible(
                               child: Text(
                                 controller.shippingAddress.value,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 14,
                                   fontFamily: regular,
                                   color: Colors.black,
@@ -508,7 +508,7 @@ class CheckoutScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
+                            const Text(
                               'Payment Method',
                               style: TextStyle(
                                 fontFamily: bold,
@@ -547,7 +547,7 @@ class CheckoutScreen extends StatelessWidget {
                             const SizedBox(width: Sizes.spaceBtwItems / 2),
                             Text(
                               controller.paymentMethod.value,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontFamily: semibold,
                                 color: Colors.black,
@@ -578,7 +578,7 @@ class CheckoutScreen extends StatelessWidget {
               ),
               foregroundColor: Colors.white,
             ),
-            child: Text(
+            child: const Text(
               'Place Order',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),

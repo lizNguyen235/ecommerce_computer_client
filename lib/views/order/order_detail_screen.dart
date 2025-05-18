@@ -22,17 +22,17 @@ class OrderDetailScreen extends StatelessWidget {
     Color getStatusColor(String status) {
       switch (status.toUpperCase()) {
         case 'PENDING':
-          return Colors.orange;
+          return Colors.deepOrange; // Vibrant orange for awaiting action
         case 'CONFIRMED':
-          return Colors.blue;
+          return Colors.blueAccent; // Bright blue for confirmation
         case 'SHIPPING':
-          return Colors.yellow;
+          return Colors.purpleAccent; // Distinct purple for transit
         case 'DELIVERED':
-          return Colors.green;
+          return Colors.green; // Standard green for success
         case 'CANCELLED':
-          return Colors.red;
+          return Colors.redAccent; // Bold red for termination
         default:
-          return TColors.primary;
+          return TColors.primary; // Fallback for undefined statuses
       }
     }
 

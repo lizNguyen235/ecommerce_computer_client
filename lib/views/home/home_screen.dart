@@ -22,26 +22,29 @@ class HomeScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       color: TColors.light,
-      width: context.screenHeight,
+      width: context.screenWidth,
       height: context.screenHeight,
       child: SafeArea(
         child: Column(
           children: [
             // Search Bar
-            Container(
-              alignment: Alignment.center,
-              height: 50,
-              color: lightGrey,
-              child: TextFormField(
-                decoration: const InputDecoration(
-                  hintText: searchAnything,
-                  hintStyle: TextStyle(color: textfieldGrey),
-                  filled: true,
-                  fillColor: whiteColor,
-                  suffixIcon: Icon(Icons.search, color: darkFontGrey),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                    borderSide: BorderSide.none,
+            SizedBox(
+              width: double.infinity,
+              child: Container(
+                alignment: Alignment.center,
+                height: 50,
+                color: lightGrey,
+                child: TextFormField(
+                  decoration: const InputDecoration(
+                    hintText: searchAnything,
+                    hintStyle: TextStyle(color: textfieldGrey),
+                    filled: true,
+                    fillColor: whiteColor,
+                    suffixIcon: Icon(Icons.search, color: darkFontGrey),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                 ),
               ),
@@ -58,7 +61,7 @@ class HomeScreen extends StatelessWidget {
                     VxSwiper.builder(
                       aspectRatio: 16 / 9,
                       autoPlay: true,
-                      height: 150,
+                      height: context.screenWidth > 1100 ? 400 : context.screenWidth > 756 ? 300: context.screenWidth > 600 ? 200 : 150,
                       enlargeCenterPage: true,
                       itemCount: sliderList.length,
                       itemBuilder: (context, index) {
@@ -73,59 +76,60 @@ class HomeScreen extends StatelessWidget {
 
                     10.heightBox,
 
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: whiteColor,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            homeButtons(
-                              icon: icTodaysDeal,
-                              title: todayDeals,
-                              onPress: () {},
-                            ),
-                            const SizedBox(
-                              width: 16,
-                            ), // Increased spacing between buttons
-                            homeButtons(
-                              icon: icFlashDeal,
-                              title: flashsales,
-                              onPress: () {},
-                            ),
-                            const SizedBox(width: 16),
-                            homeButtons(
-                              icon: icTopCategories,
-                              title: "Categories",
-                              onPress: () {},
-                            ),
-                            const SizedBox(width: 16),
-                            homeButtons(
-                              icon: icBrands,
-                              title: brand,
-                              onPress: () => Get.to(const BrandScreen()),
-                            ),
-                            const SizedBox(width: 16),
-                            homeButtons(
-                              icon: icTopSeller,
-                              title: topSellers,
-                              onPress: () {},
-                            ),
-                            const SizedBox(width: 16),
-                            homeButtons(
-                              icon: icCoupon,
-                              title: "Coupons",
-                              onPress: () {},
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    // Container(
+                    //   width: double.infinity,
+                    //   padding: const EdgeInsets.all(12),
+                    //   decoration: BoxDecoration(
+                    //     color: whiteColor,
+                    //     borderRadius: BorderRadius.circular(8),
+                    //   ),
+                    //   child: SingleChildScrollView(
+                    //     scrollDirection: Axis.horizontal,
+                    //     padding: const EdgeInsets.symmetric(vertical: 8),
+                    //     child: Row(
+                    //       mainAxisAlignment: MainAxisAlignment.start,
+                    //       children: [
+                    //         homeButtons(
+                    //           icon: icTodaysDeal,
+                    //           title: todayDeals,
+                    //           onPress: () {},
+                    //         ),
+                    //         const SizedBox(
+                    //           width: 16,
+                    //         ), // Increased spacing between buttons
+                    //         homeButtons(
+                    //           icon: icFlashDeal,
+                    //           title: flashsales,
+                    //           onPress: () {},
+                    //         ),
+                    //         const SizedBox(width: 16),
+                    //         homeButtons(
+                    //           icon: icTopCategories,
+                    //           title: "Categories",
+                    //           onPress: () {},
+                    //         ),
+                    //         const SizedBox(width: 16),
+                    //         homeButtons(
+                    //           icon: icBrands,
+                    //           title: brand,
+                    //           onPress: () => Get.to(const BrandScreen()),
+                    //         ),
+                    //         const SizedBox(width: 16),
+                    //         homeButtons(
+                    //           icon: icTopSeller,
+                    //           title: topSellers,
+                    //           onPress: () {},
+                    //         ),
+                    //         const SizedBox(width: 16),
+                    //         homeButtons(
+                    //           icon: icCoupon,
+                    //           title: "Coupons",
+                    //           onPress: () {},
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
+                    // ),
 
                     20.heightBox,
                     // New products
@@ -269,6 +273,7 @@ class HomeScreen extends StatelessWidget {
                               .makeCentered();
                         }
                         return CustomGridLayout(
+                          crossAxisCount: context.screenWidth > 1200 ? 6 : context.screenWidth > 992 ? 5 : context.screenWidth > 768 ? 4 : context.screenWidth > 600 ? 3 : 2,
                           itemCount: controller.homeProducts.length,
                           itemBuilder: (context, index) => ProductCartVertical(
                             product: controller.homeProducts[index],
@@ -286,3 +291,5 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
+
+

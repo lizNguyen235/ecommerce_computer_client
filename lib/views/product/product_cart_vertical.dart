@@ -28,6 +28,24 @@ class ProductCartVertical extends StatelessWidget {
     final CartController cartController = Get.find<CartController>();
     final RxBool isButtonPressed = false.obs; // Trạng thái hiệu ứng nút
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600; // Kiểm tra nếu là thiết bị di động
+    final isTablet = screenWidth >= 600 && screenWidth < 1100; // Kiểm tra nếu là thiết bị máy tính bảng
+    final isDesktop = screenWidth >= 1100; // Kiểm tra nếu là thiết bị máy tính để bàn
+    final double imageSize = isMobile
+        ? 100
+        : isTablet
+            ? 150
+            : 200; // Kích thước hình ảnh tùy thuộc vào thiết bị
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isPortrait = screenHeight > screenWidth; // Kiểm tra nếu là chế độ dọc
+    final isLandscape = screenHeight < screenWidth; // Kiểm tra nếu là chế độ ngang
+    final double padding = isMobile
+        ? 8
+        : isTablet
+            ? 12
+            : 16; // Padding tùy thuộc vào thiết bị
+
     return GestureDetector(
       onTap: () => Get.to(() => ProductDetailScreen(product: product)),
       child: Container(
@@ -55,19 +73,19 @@ class ProductCartVertical extends StatelessWidget {
                   // Badge % nếu có sale
                   if (hasSale)
                     Positioned(
-                      top: 8,
-                      left: 8,
+                      top: MediaQuery.of(context).size.width * 0.01 > 4 ? 4 : MediaQuery.of(context).size.width * 0.01,
+                      left: MediaQuery.of(context).size.width * 0.01 > 4 ? 4 : MediaQuery.of(context).size.width * 0.01,
                       child: RoundedContainer(
                         radius: Sizes.sm,
                         backgroundColor: Colors.yellow.withOpacity(0.8),
-                        padding: const EdgeInsets.symmetric(
+                        padding: EdgeInsets.symmetric(
                           horizontal: Sizes.sm,
                           vertical: Sizes.xs,
                         ),
                         child: Text(
                           '-$salePercent%',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: MediaQuery.of(context).size.width < 600 ? 10 : 12, // Kích thước chữ responsive
                             fontWeight: FontWeight.bold,
                             color: Colors.red,
                           ),
@@ -196,3 +214,4 @@ class ProductCartVertical extends StatelessWidget {
     );
   }
 }
+
