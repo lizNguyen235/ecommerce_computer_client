@@ -1,4 +1,5 @@
 import 'package:ecommerce_computer_client/consts/consts.dart';
+import 'package:ecommerce_computer_client/controller/cart_controller.dart';
 import 'package:ecommerce_computer_client/controller/product_controller.dart';
 import 'package:ecommerce_computer_client/models/product_model.dart';
 import 'package:ecommerce_computer_client/utils/colors.dart';
@@ -19,13 +20,16 @@ class ProductCartVertical extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = ProductController.instance;
-    final hasSale = product.salePrice > 0 && product.salePrice < product.price;
-    final salePercent = hasSale
-        ? controller.calculateSalePercentage(product.price, product.salePrice)
-        : 0.0;
+    final hasSale = product.salePrice > 0 && product.salePrice <= 1;
+    final salePrice = hasSale
+        ? controller.calculateSalePrice(product.price, product.salePrice)
+        : product.price;
+    final salePercent = (product.salePrice * 100).toInt(); // Phần trăm giảm giá
+    final CartController cartController = Get.find<CartController>();
+    final RxBool isButtonPressed = false.obs; // Trạng thái hiệu ứng nút
 
     return GestureDetector(
-      onTap: () => Get.to(() => ProductDetailScreen(product: product,)),
+      onTap: () => Get.to(() => ProductDetailScreen(product: product)),
       child: Container(
         width: 180,
         padding: const EdgeInsets.all(1),
@@ -55,23 +59,21 @@ class ProductCartVertical extends StatelessWidget {
                       left: 8,
                       child: RoundedContainer(
                         radius: Sizes.sm,
-                        backgroundColor: Colors.redAccent.withOpacity(0.8),
+                        backgroundColor: Colors.yellow.withOpacity(0.8),
                         padding: const EdgeInsets.symmetric(
                           horizontal: Sizes.sm,
                           vertical: Sizes.xs,
                         ),
                         child: Text(
-                          '-${salePercent.toStringAsFixed(0)}%',
+                          '-$salePercent%',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: Colors.red,
                           ),
                         ),
                       ),
                     ),
-                  // Icon yêu thích
-
                 ],
               ),
             ),
@@ -102,55 +104,87 @@ class ProductCartVertical extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      if (hasSale) ...[
-                        // Giá gốc gạch ngang
-                        Text(
-                          '\$${product.price.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: darkFontGrey,
-                            decoration: TextDecoration.lineThrough,
-                          ),
-                        ),
-                        // Giá sale nổi bật
-                        Text(
-                          '\$${product.salePrice.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontFamily: bold,
-                            color: redColor,
-                          ),
-                        ),
-                      ] else ...[
-                        // Chỉ hiển thị giá thường
-                        Text(
-                          '\$${product.price.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontFamily: bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (hasSale) ...[
+                            // Giá gốc gạch ngang
+                            Text(
+                              '\$${product.price.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: darkFontGrey,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            ),
+                            // Giá sale nổi bật
+                            Text(
+                              '\$${salePrice.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: bold,
+                                color: redColor,
+                              ),
+                            ),
+                          ],
+                          if (!hasSale) ...[
+                            // Chỉ hiển thị giá thường
+                            Text(
+                              '\$${product.price.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
 
                       // Nút thêm vào giỏ
-                      Container(
-                        decoration: BoxDecoration(
-                          color: TColors.primary,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            bottomRight: Radius.circular(8),
-                          ),
+                      Obx(() => InkWell(
+                        onTap: () {
+                          // Hiệu ứng nhấn nút
+                          isButtonPressed.value = true;
+                          Future.delayed(const Duration(milliseconds: 200), () {
+                            isButtonPressed.value = false;
+                          });
+
+                          // Thêm sản phẩm vào giỏ hàng
+                          cartController.addToCart(product);
+
+                          // Hiển thị thông báo
+                          Get.snackbar(
+                            'Success',
+                            'Added 1 item to cart successfully!',
+                            snackPosition: SnackPosition.TOP,
+                            backgroundColor: Colors.green.shade500,
+                            colorText: whiteColor,
+                            duration: const Duration(seconds: 2),
+                          );
+                        },
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          bottomRight: Radius.circular(8),
                         ),
-                        child: const Padding(
-                          padding: EdgeInsets.all(4),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isButtonPressed.value
+                                ? TColors.primary.withOpacity(0.7)
+                                : TColors.primary,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(8),
+                              bottomRight: Radius.circular(8),
+                            ),
+                          ),
+                          padding: const EdgeInsets.all(4),
                           child: Icon(
                             Iconsax.add,
                             color: Colors.white,
                             size: 20,
                           ),
                         ),
-                      ),
+                      )),
                     ],
                   ),
                 ],

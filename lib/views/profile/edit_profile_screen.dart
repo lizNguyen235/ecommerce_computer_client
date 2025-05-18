@@ -236,6 +236,7 @@ class _EditMyProfileScreenState extends State<EditMyProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: TAppBar(
         title: Text('Chỉnh Sửa Hồ Sơ', style: Theme.of(context).textTheme.headlineSmall),
         showBackArrow: true,

@@ -1,4 +1,5 @@
 import 'package:ecommerce_computer_client/consts/consts.dart';
+import 'package:ecommerce_computer_client/controller/cart_controller.dart';
 import 'package:ecommerce_computer_client/controller/product_controller.dart';
 import 'package:ecommerce_computer_client/models/product_model.dart';
 import 'package:ecommerce_computer_client/utils/colors.dart';
@@ -7,6 +8,7 @@ import 'package:ecommerce_computer_client/views/product/product_reviews_screen.d
 import 'package:ecommerce_computer_client/widgets/appbar.dart';
 import 'package:ecommerce_computer_client/widgets/circular_icon.dart';
 import 'package:ecommerce_computer_client/widgets/curved_edges_widget.dart';
+import 'package:ecommerce_computer_client/widgets/icon_button.dart';
 import 'package:ecommerce_computer_client/widgets/product_price_text.dart';
 import 'package:ecommerce_computer_client/widgets/product_title_text.dart';
 import 'package:ecommerce_computer_client/widgets/rounded_container.dart';
@@ -24,8 +26,12 @@ class ProductDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ProductController controller = Get.find<ProductController>();
-    final double effectiveSalePrice = product.salePrice == 0 ? product.price : (product.salePrice ?? product.price);
-    final double salePercentage = product.salePrice == 0 ? 0 : controller.calculateSalePercentage(product.price, product.salePrice ?? product.price);
+    final CartController cartController = Get.find<CartController>();
+    final hasSale = product.salePrice > 0 && product.salePrice <= 1;
+    final double effectiveSalePrice = hasSale
+        ? controller.calculateSalePrice(product.price, product.salePrice)
+        : product.price;
+    final double salePercentage = product.salePrice * 100; // Phần trăm giảm giá
     final stockStatus = controller.checkProductStockStatus(product.stock);
 
     // Quản lý số lượng và trạng thái nút "Add to Cart"
@@ -88,7 +94,7 @@ class ProductDetailScreen extends StatelessWidget {
                   color: Colors.white,
                   backgroundColor: TColors.primary.withOpacity(0.9),
                   onPressed: () {
-                    if (quantity.value < product.stock) { // Giới hạn số lượng tối đa bằng stock
+                    if (quantity.value < product.stock) {
                       quantity.value++;
                     } else {
                       Get.snackbar(
@@ -119,6 +125,11 @@ class ProductDetailScreen extends StatelessWidget {
                 Future.delayed(const Duration(milliseconds: 300), () {
                   isButtonPressed.value = false;
                 });
+
+                // Thêm sản phẩm vào giỏ hàng với số lượng
+                for (int i = 0; i < quantity.value; i++) {
+                  cartController.addToCart(product);
+                }
 
                 // Hiển thị thông báo
                 Get.snackbar(
@@ -235,7 +246,7 @@ class ProductDetailScreen extends StatelessWidget {
                       /// Price & Sale Price
                       Row(
                         children: [
-                          if (salePercentage > 0)
+                          if (hasSale)
                             RoundedContainer(
                               radius: Sizes.sm,
                               backgroundColor: Colors.yellow.shade600.withOpacity(0.8),
@@ -244,7 +255,7 @@ class ProductDetailScreen extends StatelessWidget {
                                 horizontal: Sizes.sm,
                               ),
                               child: Text(
-                                '${salePercentage.round()}%',
+                                '-${salePercentage.toStringAsFixed(0)}%',
                                 style: TextStyle(
                                   color: Colors.black,
                                   fontSize: 12,
@@ -252,10 +263,10 @@ class ProductDetailScreen extends StatelessWidget {
                                 ),
                               ),
                             ),
-                          if (salePercentage > 0) const SizedBox(width: Sizes.spaceBtwItems),
-                          if (salePercentage > 0)
+                          if (hasSale) const SizedBox(width: Sizes.spaceBtwItems),
+                          if (hasSale)
                             Text(
-                              '\$${product.price}',
+                              '\$${product.price.toStringAsFixed(2)}',
                               style: TextStyle(
                                 color: Colors.red.shade300,
                                 fontSize: 14,
@@ -264,18 +275,18 @@ class ProductDetailScreen extends StatelessWidget {
                                 fontFamily: semibold,
                               ),
                             ),
-                          if (salePercentage > 0) const SizedBox(width: Sizes.spaceBtwItems),
+                          if (hasSale) const SizedBox(width: Sizes.spaceBtwItems),
                           ProductPriceText(
-                            price: effectiveSalePrice.toString(),
+                            price: effectiveSalePrice.toStringAsFixed(2),
                             isLarge: true,
                           ),
                         ],
                       ),
-                      const SizedBox(width: Sizes.spaceBtwItems / 1.5),
+                      const SizedBox(height: Sizes.spaceBtwItems / 1.5),
 
                       /// Title
                       ProductTitleText(title: product.title),
-                      const SizedBox(width: Sizes.spaceBtwItems / 1.5),
+                      const SizedBox(height: Sizes.spaceBtwItems / 1.5),
 
                       /// Stock
                       Row(
@@ -293,7 +304,7 @@ class ProductDetailScreen extends StatelessWidget {
                         ],
                       ),
 
-                      const SizedBox(width: Sizes.spaceBtwItems / 1.5),
+                      const SizedBox(height: Sizes.spaceBtwItems / 1.5),
 
                       /// Brand
                       Row(

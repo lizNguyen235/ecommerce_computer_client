@@ -1,7 +1,10 @@
 import 'package:ecommerce_computer_client/consts/consts.dart';
+import 'package:ecommerce_computer_client/controller/cart_controller.dart';
+import 'package:ecommerce_computer_client/controller/checkout_controller.dart';
+import 'package:ecommerce_computer_client/models/product_model.dart';
 import 'package:ecommerce_computer_client/utils/colors.dart';
 import 'package:ecommerce_computer_client/utils/sizes.dart';
-import 'package:ecommerce_computer_client/views/success/success_screen.dart';
+import 'package:ecommerce_computer_client/views/address/address_screen.dart';
 import 'package:ecommerce_computer_client/widgets/rounded_container.dart';
 import 'package:ecommerce_computer_client/widgets/rounded_image.dart';
 import 'package:flutter/material.dart';
@@ -13,11 +16,15 @@ class CheckoutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final CheckoutController controller = Get.put(CheckoutController());
+    final CartController cartController = Get.find<CartController>();
+
+
     return Scaffold(
       backgroundColor: whiteColor,
       appBar: AppBar(
         title: Text(
-          'Order Review',
+          'Checkout',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w600,
@@ -32,111 +39,84 @@ class CheckoutScreen extends StatelessWidget {
           padding: const EdgeInsets.all(Sizes.defaultSpace),
           child: Column(
             children: [
-              Row(
-                children: [
-                  /// Product Image
-                  RoundedImage(
-                    imageUrl: 'assets/images/user.png',
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                    padding: EdgeInsets.all(Sizes.sm),
-                    backgroundColor: Colors.grey.shade200,
-                  ),
-                  const SizedBox(width: Sizes.spaceBtwItems),
-
-                  /// Title, Price, Variant
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              // Cart Items
+              ...cartController.cartItems.entries.map((entry) {
+                final ProductModel product = entry.key;
+                final int quantity = entry.value;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: Sizes.spaceBtwItems),
+                  child: Row(
                     children: [
-                      /// Brand name
-                      Row(
-                        children: [
-                          Text(
-                            'Dell',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontFamily: regular,
-                              color: darkFontGrey,
-                            ),
-                          ),
-                          const SizedBox(width: Sizes.spaceBtwItems / 2),
-                          Icon(Iconsax.verify5, color: Colors.blue, size: 14),
-                        ],
+                      RoundedImage(
+                        imageUrl: product.thumbnail,
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                        padding: EdgeInsets.all(Sizes.sm),
+                        backgroundColor: Colors.grey.shade200,
+                        isNetworkImage: true,
                       ),
-                      const SizedBox(height: 4),
-
-                      /// Product name
-                      Text(
-                        'Dell Inspiron 15',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontFamily: bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-
-                      /// Variants
-                      Text.rich(
-                        TextSpan(
+                      const SizedBox(width: Sizes.spaceBtwItems),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            TextSpan(
-                              text: 'Color ',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontFamily: regular,
-                                color: darkFontGrey,
-                              ),
+                            Row(
+                              children: [
+                                Text(
+                                  product.brand,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontFamily: regular,
+                                    color: darkFontGrey,
+                                  ),
+                                ),
+                                const SizedBox(width: Sizes.spaceBtwItems / 2),
+                                Icon(Iconsax.verify5, color: Colors.blue, size: 14),
+                              ],
                             ),
-                            TextSpan(
-                              text: 'Black ',
+                            const SizedBox(height: 4),
+                            Text(
+                              product.title,
                               style: TextStyle(
-                                fontSize: 12,
-                                fontFamily: semibold,
+                                fontSize: 16,
+                                fontFamily: bold,
                                 color: Colors.black,
                               ),
                             ),
-
-                            TextSpan(
-                              text: 'Storage ',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontFamily: regular,
-                                color: darkFontGrey,
-                              ),
-                            ),
-                            TextSpan(
-                              text: '512GB',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontFamily: semibold,
-                                color: Colors.black,
+                            const SizedBox(height: 4),
+                            Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: '\$${(product.salePrice > 0 ? (product.price - product.price * (1 - product.salePrice)) : product.price).toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontFamily: semibold,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                  const TextSpan(text: '  x'),
+                                  TextSpan(
+                                    text: '$quantity',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontFamily: regular,
+                                      color: darkFontGrey,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-
-                      /// Quantity
-                      Text.rich(
-                        TextSpan(
-                          text: 'x1',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontFamily: semibold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
-                ],
-              ),
+                );
+              }).toList(),
               const SizedBox(height: Sizes.spaceBtwSections),
-
-              /// - Coupon Textfield
+              // Coupon
               RoundedContainer(
                 showBorder: true,
                 backgroundColor: whiteColor,
@@ -146,55 +126,149 @@ class CheckoutScreen extends StatelessWidget {
                   right: Sizes.sm,
                   left: Sizes.md,
                 ),
-
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Flexible(
-                      child: TextFormField(
-                        decoration: const InputDecoration(
-                          hintText: 'Have a promo code? Enter here',
-                          border: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          errorBorder: InputBorder.none,
-                          disabledBorder: InputBorder.none,
-                          hintStyle: TextStyle(
-                            fontSize: 16,
-                            color: Colors.black,
+                    Obx(() => Row(
+                      children: [
+                        Flexible(
+                          child: DropdownButton<String>(
+                            isExpanded: true,
+                            hint: Text(
+                              'Select a coupon',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.black,
+                              ),
+                            ),
+                            value: controller.selectedCouponCode.value.isEmpty
+                                ? null
+                                : controller.selectedCouponCode.value,
+                            items: controller.availableCoupons.map((coupon) {
+                              final remainingUses = coupon['maxUses'] - coupon['usedCount'];
+                              return DropdownMenuItem<String>(
+                                value: coupon['code'],
+                                child: Text(
+                                  '${coupon['code']} (-\$${coupon['discountAmount'].toStringAsFixed(0)}, $remainingUses uses left)', style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                controller.applyCoupon(value);
+                              } else {
+                                controller.removeCoupon();
+                              }
+                            },
                           ),
                         ),
-                      ),
-                    ),
-
-                    // Button
-                    SizedBox(
-                      width: 80,
-                      child: ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey.shade50.withOpacity(0.5),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: Sizes.sm,
-                            vertical: 12,
+                      ],
+                    )),
+                    Obx(() {
+                      if (controller.couponError.value.isNotEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: Sizes.sm),
+                          child: Text(
+                            controller.couponError.value,
+                            style: TextStyle(color: Colors.red, fontSize: 14),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          foregroundColor: TColors.dark.withOpacity(0.5),
-                          side: BorderSide(color: Colors.grey.withOpacity(0.1)),
-                        ),
-                        child: const Text(
-                          'Apply',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ),
-                    ),
+                        );
+                      }
+                      return SizedBox.shrink();
+                    }),
                   ],
                 ),
               ),
               const SizedBox(height: Sizes.spaceBtwSections),
-
-              /// - Billing
+              // Loyalty Points
+              RoundedContainer(
+                showBorder: true,
+                backgroundColor: whiteColor,
+                padding: const EdgeInsets.all(Sizes.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Loyalty Points',
+                          style: TextStyle(
+                            fontFamily: bold,
+                            fontSize: 16,
+                            color: Colors.black,
+                          ),
+                        ),
+                        Obx(() => Text(
+                          'Available: ${controller.loyaltyPoints.value.toStringAsFixed(2)} points (\$${(controller.loyaltyPoints.value).toStringAsFixed(0)})',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontFamily: regular,
+                            color: darkFontGrey,
+                          ),
+                        )),
+                      ],
+                    ),
+                    const SizedBox(height: Sizes.spaceBtwItems),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            decoration: InputDecoration(
+                              labelText: 'Points to Redeem',
+                              border: OutlineInputBorder(),
+                              hintText: 'Enter points to redeem',
+                            ),
+                            keyboardType: TextInputType.number,
+                            onChanged: (value) {
+                              final points = double.tryParse(value) ?? 0;
+                              controller.applyLoyaltyPoints(points);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: Sizes.spaceBtwItems),
+                        ElevatedButton(
+                          onPressed: () {
+                            final textField = context.findAncestorWidgetOfExactType<TextFormField>();
+                            if (textField != null && textField.controller?.text.isNotEmpty == true) {
+                              final points = double.tryParse(textField.controller!.text) ?? 0;
+                              controller.applyLoyaltyPoints(points);
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: TColors.primary,
+                            padding: const EdgeInsets.symmetric(horizontal: Sizes.sm, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            'Apply',
+                            style: TextStyle(fontSize: 16, color: whiteColor),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Obx(() {
+                      if (controller.pointAmount.value > 0) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: Sizes.sm),
+                          child: Text(
+                            'Loyalty Points Discount: ${controller.pointsToRedeem.value.toStringAsFixed(2)} points (\$${controller.pointAmount.value.toStringAsFixed(0)})',
+                            style: TextStyle(color: Colors.green, fontSize: 14),
+                          ),
+                        );
+                      }
+                      return SizedBox.shrink();
+                    }),
+                  ],
+                ),
+              ),
+              const SizedBox(height: Sizes.spaceBtwSections),
+              // Billing
               RoundedContainer(
                 showBorder: true,
                 backgroundColor: whiteColor,
@@ -212,19 +286,39 @@ class CheckoutScreen extends StatelessWidget {
                             color: Colors.black,
                           ),
                         ),
+                        Obx(() => Text(
+                          '\$${controller.subtotal.value.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: regular,
+                            color: Colors.black,
+                          ),
+                        )),
+                      ],
+                    ),
+                    const SizedBox(height: Sizes.spaceBtwItems / 2),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
                         Text(
-                          '\$256.0',
+                          'Tax (5%)',
                           style: TextStyle(
                             fontSize: 16,
                             fontFamily: regular,
                             color: Colors.black,
                           ),
                         ),
+                        Obx(() => Text(
+                          '\$${controller.tax.value.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontFamily: regular,
+                            color: Colors.black,
+                          ),
+                        )),
                       ],
                     ),
                     const SizedBox(height: Sizes.spaceBtwItems / 2),
-
-                    /// - Shipping Fee
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -236,19 +330,70 @@ class CheckoutScreen extends StatelessWidget {
                             color: Colors.black,
                           ),
                         ),
-                        Text(
-                          '\$6.0',
+                        Obx(() => Text(
+                          '\$${controller.shippingFee.value.toStringAsFixed(2)}',
                           style: TextStyle(
                             fontSize: 14,
                             fontFamily: regular,
                             color: Colors.black,
                           ),
-                        ),
+                        )),
                       ],
                     ),
                     const SizedBox(height: Sizes.spaceBtwItems / 2),
-
-                    /// - Order Total
+                    Obx(() {
+                      if (controller.discountAmount.value > 0) {
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Coupon Discount',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: regular,
+                                color: Colors.black,
+                              ),
+                            ),
+                            Text(
+                              '-\$${controller.discountAmount.value.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: regular,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      return SizedBox.shrink();
+                    }),
+                    Obx(() {
+                      if (controller.pointAmount.value > 0) {
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Loyalty Points Discount',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: regular,
+                                color: Colors.black,
+                              ),
+                            ),
+                            Text(
+                              '-\$${controller.pointAmount.value.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: regular,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      return SizedBox.shrink();
+                    }),
+                    const SizedBox(height: Sizes.spaceBtwItems / 2),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -260,74 +405,20 @@ class CheckoutScreen extends StatelessWidget {
                             color: Colors.black,
                           ),
                         ),
-                        Text(
-                          '\$262.0',
+                        Obx(() => Text(
+                          '\$${controller.totalAmount.value.toStringAsFixed(2)}',
                           style: TextStyle(
                             fontSize: 17,
                             fontFamily: bold,
                             color: Colors.black,
                           ),
-                        ),
+                        )),
                       ],
                     ),
                     const SizedBox(height: Sizes.spaceBtwItems),
                     const Divider(color: Colors.grey, thickness: 1),
                     const SizedBox(height: Sizes.spaceBtwItems),
-
-                    /// - Payment Method
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Payment Method',
-                              style: TextStyle(
-                                fontFamily: bold,
-                                fontSize: 18,
-                                color: Colors.black,
-                              ),
-                            ),
-                            Text(
-                              'Change',
-                              style: TextStyle(
-                                fontFamily: regular,
-                                fontSize: 14,
-                                color: darkFontGrey,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: Sizes.spaceBtwItems / 2),
-
-                        Row(
-                          children: [
-                            RoundedContainer(
-                              width: 60,
-                              height: 35,
-                              backgroundColor: Colors.white,
-                              padding: const EdgeInsets.all(Sizes.sm),
-                              child: const Image(
-                                image: AssetImage('assets/images/paypal.png'),
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                            const SizedBox(width: Sizes.spaceBtwItems / 2),
-                            Text(
-                              'PayPal',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontFamily: semibold,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: Sizes.spaceBtwItems),
-
-                    /// - Shipping Address
+                    // Shipping Address
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -342,27 +433,33 @@ class CheckoutScreen extends StatelessWidget {
                                 color: Colors.black,
                               ),
                             ),
-                            Text(
-                              'Change',
-                              style: TextStyle(
-                                fontFamily: regular,
-                                fontSize: 14,
-                                color: darkFontGrey,
+                            TextButton(
+                              onPressed: () async {
+                                await Get.to(() => const AddressScreen());
+                                controller.loadUserData(); // Cập nhật địa chỉ sau khi chọn
+                              },
+                              child: Text(
+                                'Change',
+                                style: TextStyle(
+                                  fontFamily: regular,
+                                  fontSize: 14,
+                                  color: darkFontGrey,
+                                ),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: Sizes.spaceBtwItems / 1.5),
-                        Text(
-                          'Coding with Q',
+                        Obx(() => Text(
+                          controller.recipientName.value,
                           style: TextStyle(
                             fontSize: 16,
                             fontFamily: semibold,
                             color: Colors.black,
                           ),
-                        ),
+                        )),
                         const SizedBox(height: Sizes.spaceBtwItems / 2),
-                        Row(
+                        Obx(() => Row(
                           children: [
                             const Icon(
                               Iconsax.call,
@@ -371,7 +468,7 @@ class CheckoutScreen extends StatelessWidget {
                             ),
                             const SizedBox(width: Sizes.spaceBtwItems),
                             Text(
-                              '0123456789',
+                              controller.phoneNumber.value,
                               style: TextStyle(
                                 fontSize: 14,
                                 fontFamily: regular,
@@ -379,9 +476,9 @@ class CheckoutScreen extends StatelessWidget {
                               ),
                             ),
                           ],
-                        ),
+                        )),
                         const SizedBox(height: Sizes.spaceBtwItems / 2),
-                        Row(
+                        Obx(() => Row(
                           children: [
                             const Icon(
                               Iconsax.location,
@@ -389,16 +486,75 @@ class CheckoutScreen extends StatelessWidget {
                               size: 16,
                             ),
                             const SizedBox(width: Sizes.spaceBtwItems),
+                            Flexible(
+                              child: Text(
+                                controller.shippingAddress.value,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontFamily: regular,
+                                  color: Colors.black,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        )),
+                      ],
+                    ),
+                    const SizedBox(height: Sizes.spaceBtwItems),
+                    // Payment Method
+                    Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
                             Text(
-                              '123 Main St, City, Country',
+                              'Payment Method',
                               style: TextStyle(
-                                fontSize: 14,
-                                fontFamily: regular,
+                                fontFamily: bold,
+                                fontSize: 18,
                                 color: Colors.black,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                controller.showPaymentMethodSheet(context);
+                              },
+                              child: Text(
+                                'Change',
+                                style: TextStyle(
+                                  fontFamily: regular,
+                                  fontSize: 14,
+                                  color: darkFontGrey,
+                                ),
                               ),
                             ),
                           ],
                         ),
+                        const SizedBox(height: Sizes.spaceBtwItems / 2),
+                        Obx(() => Row(
+                          children: [
+                            RoundedContainer(
+                              width: 60,
+                              height: 35,
+                              backgroundColor: Colors.white,
+                              padding: const EdgeInsets.all(Sizes.sm),
+                              child: Image(
+                                image: AssetImage(controller.paymentImage.value),
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            const SizedBox(width: Sizes.spaceBtwItems / 2),
+                            Text(
+                              controller.paymentMethod.value,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: semibold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        )),
                       ],
                     ),
                   ],
@@ -410,27 +566,22 @@ class CheckoutScreen extends StatelessWidget {
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(Sizes.defaultSpace),
-        child: ElevatedButton(
-          onPressed:
-              () => Get.to(
-                () => SuccessScreen(
-                  title: 'Payment Successful',
-                  subtitle: 'Your order has been placed successfully.',
-                  buttonText: 'Continue Shopping',
-                  onPressed: () => Get.back(),
-                ),
+        child: SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () => controller.placeOrder(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: TColors.primary,
+              padding: const EdgeInsets.symmetric(vertical: Sizes.md),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: TColors.primary,
-            padding: const EdgeInsets.symmetric(vertical: Sizes.md),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              foregroundColor: Colors.white,
             ),
-            foregroundColor: Colors.white,
-          ),
-          child: const Text(
-            'Pay Now',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            child: Text(
+              'Place Order',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
           ),
         ),
       ),

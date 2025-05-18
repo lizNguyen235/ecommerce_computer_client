@@ -1,4 +1,5 @@
 import 'package:ecommerce_computer_client/consts/consts.dart';
+import 'package:ecommerce_computer_client/controller/address_controller.dart';
 import 'package:ecommerce_computer_client/controller/product_controller.dart';
 import 'package:ecommerce_computer_client/firebase_options.dart';
 import 'package:ecommerce_computer_client/views/home/home.dart';
@@ -15,6 +16,8 @@ void main() async {
   await initializeDateFormatting('vi_VN');
   // Khởi tạo các dịch vụ khác nếu cần
   Get.put(ProductController());
+  // Khởi tạo các controller khác nếu cần
+  Get.put(AddressController());
   runApp(MyApp());
 }
 

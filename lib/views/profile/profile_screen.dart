@@ -90,6 +90,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: TAppBar(
         title: Text('Hồ Sơ Của Tôi', style: Theme.of(context).textTheme.headlineSmall),
         showBackArrow: true,
