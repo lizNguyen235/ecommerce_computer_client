@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
 
-// Điều chỉnh đường dẫn import cho phù hợp với cấu trúc dự án của bạn
-import '../../core/service/UserService.dart'; // Giả sử UserService ở thư mục services
-import '../../utils/colors.dart';   // Giả sử TColors ở utils/constants
+import '../../core/service/UserService.dart';
+import '../../utils/colors.dart';
 import '../../utils/sizes.dart';
-import '../core/service/AuthService.dart';    // Giả sử Sizes ở utils/constants
+import '../core/service/AuthService.dart';
+import '../data/userModels/address_model.dart';
+import '../models/address_model.dart'; // <<--- THÊM IMPORT ADDRESSMODEL
 
 class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({super.key});
@@ -18,46 +19,38 @@ class UserManagementScreen extends StatefulWidget {
 class _UserManagementScreenState extends State<UserManagementScreen> {
   final UserService _userService = UserService();
   final AuthService _authService = AuthService();
-  String? _selectedRoleDialog; // Dùng cho Dropdown trong dialog chỉnh sửa vai trò
+  String? _selectedRoleDialog;
 
-  // Hàm để lấy người dùng hiện tại (admin) để tránh admin tự ban mình hoặc tự thay đổi vai trò của mình
-  // Bạn cần có cách lấy UID của admin đang đăng nhập.
-  // Ví dụ, nếu AuthService có getCurrentUser(), bạn có thể dùng nó.
-  // Vì mục đích minh họa, ta sẽ giả sử có một biến `currentAdminUid`
-  // Trong thực tế, bạn nên lấy nó từ AuthService hoặc Provider.
-  String? get currentAdminUid {
-    return _authService.getCurrentUser()?.uid; // Nếu _auth là public hoặc có getter
-    // Tạm thời hardcode hoặc để null nếu bạn chưa có cách lấy
-    // Nếu AuthService().getCurrentUser() có sẵn và trả về User? thì:
-    // return AuthService().getCurrentUser()?.uid;
-    // Vì _auth trong UserService là private, ta cần một cách khác
-    // Giả sử bạn có một instance của AuthService ở đây hoặc thông qua Provider
-    // For now, we'll assume it's hard to get here without modifying AuthService visibility or passing it
-    return null; // Hoặc lấy UID của admin bằng cách nào đó
-  }
+  String? get currentAdminUid => _authService.getCurrentUser()?.uid;
 
-  // TextEditingControllers cho các dialog chỉnh sửa
+  // TextEditingControllers cho các dialog
   final TextEditingController _phoneNumberController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _loyaltyPointsController = TextEditingController();
+
+  // MỚI: Controllers cho dialog địa chỉ
+  final TextEditingController _addressNameController = TextEditingController();
+  final TextEditingController _addressPhoneController = TextEditingController();
+  final TextEditingController _addressDetailController = TextEditingController();
+  bool _addressIsDefaultController = false;
+
+
   @override
   void dispose() {
     _phoneNumberController.dispose();
-    _addressController.dispose();
     _fullNameController.dispose();
     _loyaltyPointsController.dispose();
+    _addressNameController.dispose();
+    _addressPhoneController.dispose();
+    _addressDetailController.dispose();
     super.dispose();
-
   }
-
 
   @override
   Widget build(BuildContext context) {
     final String? adminUid = currentAdminUid;
 
     return Scaffold(
-      // AppBar đã được quản lý bởi AdminMainPage
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _userService.getAllUsers(),
         builder: (context, snapshot) {
@@ -97,12 +90,15 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final String avatarUrl = userData['avatarUrl'] as String? ?? '';
     final String phoneNumber = userData['phoneNumber'] as String? ?? 'Chưa có SĐT';
     final int loyaltyPoints = userData['loyaltyPoints'] as int? ?? 0;
+
     // Lấy và chuyển đổi danh sách địa chỉ một cách an toàn
     final List<dynamic> addressesDynamic = userData['shippingAddress'] as List<dynamic>? ?? [];
-    final List<String> shippingAddresses = addressesDynamic.map((e) => e.toString()).toList();
-
+    final List<AddressModel> shippingAddresses = addressesDynamic
+        .map((addrMap) => AddressModel.fromMap(addrMap as Map<String, dynamic>))
+        .toList();
 
     return Card(
+      // ... (Phần Card và thông tin user cơ bản giữ nguyên) ...
       margin: const EdgeInsets.symmetric(vertical: Sizes.sm),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Sizes.cardRadiusMd)),
@@ -112,7 +108,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start, // Căn chỉnh tốt hơn khi thông tin nhiều dòng
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CircleAvatar(
                   radius: 25,
@@ -127,7 +123,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row( // Mới: Gom tên và nút sửa tên
+                      Row(
                         children: [
                           Expanded(
                             child: Text(
@@ -137,7 +133,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (!isCurrentUserTheAdminViewing) // Chỉ admin khác mới sửa được
+                          if (!isCurrentUserTheAdminViewing)
                             SizedBox(
                               height: 24, width: 24,
                               child: IconButton(
@@ -162,20 +158,19 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                           const SizedBox(width: Sizes.sm / 2),
                           Expanded(
                             child: Text(
-                              phoneNumber,
+                              phoneNumber, // SĐT chính của user
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: TColors.textSecondary),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          // Chỉ hiển thị nút sửa SĐT nếu đây không phải là admin đang xem
                           if (!isCurrentUserTheAdminViewing)
                             SizedBox(
-                              height: 24, width: 24, // Giảm kích thước vùng chạm
+                              height: 24, width: 24,
                               child: IconButton(
                                 padding: EdgeInsets.zero,
                                 icon: const Icon(Iconsax.edit_2, size: Sizes.iconSm, color: TColors.primary),
-                                tooltip: 'Sửa SĐT',
+                                tooltip: 'Sửa SĐT chính',
                                 onPressed: () => _showEditPhoneNumberDialog(context, uid, fullName, userData['phoneNumber'] ?? ''),
                               ),
                             ),
@@ -206,13 +201,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               ],
             ),
             const SizedBox(height: Sizes.sm),
-            // MỚI: Hiển thị và sửa điểm Loyalty
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   children: [
-                    Icon(Iconsax.medal_star, size: Sizes.iconMd, color: TColors.warning), // Icon cho điểm
+                    Icon(Iconsax.medal_star, size: Sizes.iconMd, color: TColors.warning),
                     const SizedBox(width: Sizes.sm / 2),
                     Text('Điểm Loyalty: ', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: TColors.dark)),
                     Text('$loyaltyPoints', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: TColors.primary)),
@@ -228,10 +222,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               ],
             ),
             const SizedBox(height: Sizes.sm),
-            // --- Phần hiển thị và quản lý địa chỉ ---
             _buildAddressesSection(context, uid, fullName, shippingAddresses, isCurrentUserTheAdminViewing),
-            // --- Hết phần địa chỉ ---
-
             const Divider(height: Sizes.spaceBtwItems, thickness: 0.5),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -255,7 +246,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     child: Text('(You)', style: TextStyle(color: TColors.primary, fontStyle: FontStyle.italic)),
                   ),
                 const SizedBox(width: Sizes.sm),
-                if (!isCurrentUserTheAdminViewing || role != "Admin") // Admin không thể tự sửa vai trò của mình (nếu là admin duy nhất)
+                if (!isCurrentUserTheAdminViewing) // Admin có thể sửa vai trò của người khác, nhưng không phải của chính mình nếu điều đó làm mất quyền admin
                   TextButton.icon(
                     icon: const Icon(Iconsax.edit, size: Sizes.iconMd, color: TColors.primary),
                     label: const Text('Sửa vai trò', style: TextStyle(color: TColors.primary)),
@@ -269,7 +260,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     );
   }
 
-  Widget _buildAddressesSection(BuildContext context, String uid, String userName, List<String> addresses, bool isCurrentUserTheAdminViewing) {
+  Widget _buildAddressesSection(BuildContext context, String uid, String userName, List<AddressModel> addresses, bool isCurrentUserTheAdminViewing) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -280,12 +271,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               'Địa chỉ giao hàng (${addresses.length}):',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
             ),
-            // Chỉ hiển thị nút thêm địa chỉ nếu đây không phải là admin đang xem
             if (!isCurrentUserTheAdminViewing)
               IconButton(
                 icon: const Icon(Iconsax.add_square, color: TColors.primary, size: Sizes.iconMd),
                 tooltip: 'Thêm địa chỉ mới',
-                onPressed: () => _showAddEditAddressDialog(context, uid, userName), // Không có oldAddress nghĩa là thêm mới
+                onPressed: () => _showAddEditAddressDialog(context, uid, userName),
               ),
           ],
         ),
@@ -297,153 +287,164 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           )
         else
           ListView.builder(
-            shrinkWrap: true, // Quan trọng khi lồng ListView
-            physics: const NeverScrollableScrollPhysics(), // Quan trọng khi lồng ListView
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
             itemCount: addresses.length,
             itemBuilder: (context, index) {
-              final address = addresses[index];
-              return ListTile(
-                dense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: Sizes.sm / 2, vertical: 0),
-                leading: Icon(Iconsax.location, size: Sizes.iconMd, color: TColors.dark),
-                title: Text(address, style: Theme.of(context).textTheme.bodyMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
-                // Chỉ hiển thị nút sửa/xóa nếu đây không phải là admin đang xem
-                trailing: isCurrentUserTheAdminViewing ? null : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Iconsax.edit_2, size: Sizes.iconSm, color: TColors.primary),
-                      tooltip: 'Sửa địa chỉ',
-                      onPressed: () => _showAddEditAddressDialog(context, uid, userName, oldAddress: address),
-                    ),
-                    IconButton(
-                      icon: const Icon(Iconsax.trash, size: Sizes.iconSm, color: TColors.error),
-                      tooltip: 'Xóa địa chỉ',
-                      onPressed: () => _confirmRemoveAddress(context, uid, userName, address),
-                    ),
-                  ],
+              final addressModel = addresses[index];
+              return Card(
+                elevation: 0.5,
+                margin: const EdgeInsets.only(bottom: Sizes.xs),
+                shape: RoundedRectangleBorder(
+                    side: BorderSide(color: addressModel.isDefault ? TColors.primary.withOpacity(0.5) : Colors.transparent, width: 1.5),
+                    borderRadius: BorderRadius.circular(Sizes.borderRadiusSm)
+                ),
+                child: ListTile(
+                  dense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: Sizes.sm, vertical: Sizes.xs/2),
+                  // leading: Icon(Iconsax.location, size: Sizes.iconMd, color: addressModel.isDefault ? TColors.primary : TColors.dark),
+                  title: Text(addressModel.name, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(addressModel.phone, style: Theme.of(context).textTheme.bodySmall),
+                      Text(addressModel.address, style: Theme.of(context).textTheme.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                  trailing: isCurrentUserTheAdminViewing ? (addressModel.isDefault ? Chip(label: Text('Default'), padding: EdgeInsets.zero, visualDensity: VisualDensity.compact,) : null) : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (!addressModel.isDefault)
+                        IconButton(
+                          icon: const Icon(Iconsax.star_1, size: Sizes.iconSm, color: TColors.primaryBackground), // Hoặc star_slash nếu muốn
+                          tooltip: 'Đặt làm mặc định',
+                          onPressed: () => _confirmSetDefaultAddress(context, uid, userName, addressModel),
+                        )
+                      else
+                        Icon(Iconsax.star_1, color: TColors.warning, size: Sizes.iconMd), // Icon sao vàng cho mặc định
+                      IconButton(
+                        icon: const Icon(Iconsax.edit_2, size: Sizes.iconSm, color: TColors.primary),
+                        tooltip: 'Sửa địa chỉ',
+                        onPressed: () => _showAddEditAddressDialog(context, uid, userName, oldAddressModel: addressModel),
+                      ),
+                      IconButton(
+                        icon: const Icon(Iconsax.trash, size: Sizes.iconSm, color: TColors.error),
+                        tooltip: 'Xóa địa chỉ',
+                        onPressed: () => _confirmRemoveAddress(context, uid, userName, addressModel),
+                      ),
+                    ],
+                  ),
+                  onTap: isCurrentUserTheAdminViewing || addressModel.isDefault ? null : () => _confirmSetDefaultAddress(context, uid, userName, addressModel), // Set default on tap if not default
                 ),
               );
             },
           ),
-        const SizedBox(height: Sizes.sm), // Thêm khoảng đệm dưới cùng cho section địa chỉ
+        const SizedBox(height: Sizes.sm),
       ],
     );
   }
 
-  // --- Dialog chỉnh sửa số điện thoại ---
-  Future<void> _showEditPhoneNumberDialog(BuildContext context, String uid, String userName, String currentPhoneNumber) async {
-    _phoneNumberController.text = currentPhoneNumber;
-    final String? newPhoneNumber = await showDialog<String>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text('Sửa SĐT cho "$userName"'),
-          content: TextField(
-            controller: _phoneNumberController,
-            keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(
-              labelText: 'Số điện thoại mới',
-              hintText: 'Nhập số điện thoại',
-              prefixIcon: Icon(Iconsax.call),
-              border: OutlineInputBorder(),
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Hủy'),
-              onPressed: () => Navigator.of(dialogContext).pop(),
-            ),
-            ElevatedButton( // Sử dụng ElevatedButton cho hành động chính
-              child: const Text('Lưu'),
-              onPressed: () {
-                if (_phoneNumberController.text.trim().isNotEmpty) {
-                  Navigator.of(dialogContext).pop(_phoneNumberController.text.trim());
-                } else {
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    const SnackBar(content: Text('Số điện thoại không được để trống'), backgroundColor: TColors.warning),
-                  );
-                }
-              },
-            ),
-          ],
-        );
-      },
-    );
-
-    if (newPhoneNumber != null && newPhoneNumber != currentPhoneNumber) {
-      try {
-        await _userService.updateUserPhoneNumber(uid, newPhoneNumber);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Đã cập nhật SĐT cho "$userName".'), backgroundColor: TColors.success),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi khi cập nhật SĐT: $e'), backgroundColor: TColors.error),
-        );
-      }
-    }
-  }
-
   // --- Dialog thêm/sửa địa chỉ ---
-  Future<void> _showAddEditAddressDialog(BuildContext context, String uid, String userName, {String? oldAddress}) async {
-    _addressController.text = oldAddress ?? ''; // Nếu là sửa thì điền địa chỉ cũ
-    final bool isEditing = oldAddress != null;
+  Future<void> _showAddEditAddressDialog(BuildContext context, String uid, String userName, {AddressModel? oldAddressModel}) async {
+    final bool isEditing = oldAddressModel != null;
+    // Thiết lập giá trị ban đầu cho controllers
+    _addressNameController.text = oldAddressModel?.name ?? '';
+    _addressPhoneController.text = oldAddressModel?.phone ?? '';
+    _addressDetailController.text = oldAddressModel?.address ?? '';
+    _addressIsDefaultController = oldAddressModel?.isDefault ?? false;
 
-    final String? newOrEditedAddress = await showDialog<String>(
+
+    final AddressModel? resultAddress = await showDialog<AddressModel>(
       context: context,
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text(isEditing ? 'Sửa địa chỉ cho "$userName"' : 'Thêm địa chỉ mới cho "$userName"'),
-          content: TextField(
-            controller: _addressController,
-            maxLines: 3,
-            minLines: 1,
-            decoration: InputDecoration(
-              labelText: 'Địa chỉ',
-              hintText: 'Nhập địa chỉ chi tiết (số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố)',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Hủy'),
-              onPressed: () => Navigator.of(dialogContext).pop(),
-            ),
-            ElevatedButton(
-              child: Text(isEditing ? 'Lưu thay đổi' : 'Thêm mới'),
-              onPressed: () {
-                if (_addressController.text.trim().isNotEmpty) {
-                  Navigator.of(dialogContext).pop(_addressController.text.trim());
-                } else {
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    const SnackBar(content: Text('Địa chỉ không được để trống'), backgroundColor: TColors.warning),
-                  );
-                }
-              },
-            ),
-          ],
+        // Sử dụng StatefulBuilder để cập nhật trạng thái của Checkbox bên trong Dialog
+        return StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
+                title: Text(isEditing ? 'Sửa địa chỉ cho "$userName"' : 'Thêm địa chỉ mới cho "$userName"'),
+                content: SingleChildScrollView( // Cho phép cuộn nếu nội dung dài
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: _addressNameController,
+                        decoration: const InputDecoration(labelText: 'Tên người nhận', prefixIcon: Icon(Iconsax.user_octagon)),
+                      ),
+                      const SizedBox(height: Sizes.spaceBtwInputFields),
+                      TextField(
+                        controller: _addressPhoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(labelText: 'Số điện thoại', prefixIcon: Icon(Iconsax.call_calling)),
+                      ),
+                      const SizedBox(height: Sizes.spaceBtwInputFields),
+                      TextField(
+                        controller: _addressDetailController,
+                        maxLines: 3, minLines: 1,
+                        decoration: const InputDecoration(labelText: 'Địa chỉ chi tiết', prefixIcon: Icon(Iconsax.map_1)),
+                      ),
+                      const SizedBox(height: Sizes.spaceBtwInputFields),
+                      CheckboxListTile(
+                        title: const Text("Đặt làm địa chỉ mặc định"),
+                        value: _addressIsDefaultController,
+                        onChanged: (bool? value) {
+                          setDialogState(() { // Cập nhật trạng thái của Checkbox
+                            _addressIsDefaultController = value ?? false;
+                          });
+                        },
+                        controlAffinity: ListTileControlAffinity.leading, // Checkbox ở bên trái
+                        contentPadding: EdgeInsets.zero,
+                      )
+                    ],
+                  ),
+                ),
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text('Hủy'),
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                  ),
+                  ElevatedButton(
+                    child: Text(isEditing ? 'Lưu thay đổi' : 'Thêm mới'),
+                    onPressed: () {
+                      if (_addressNameController.text.trim().isEmpty ||
+                          _addressPhoneController.text.trim().isEmpty ||
+                          _addressDetailController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                          const SnackBar(content: Text('Vui lòng điền đầy đủ thông tin địa chỉ.'), backgroundColor: TColors.warning),
+                        );
+                        return;
+                      }
+                      final newAddress = AddressModel(
+                        name: _addressNameController.text.trim(),
+                        phone: _addressPhoneController.text.trim(),
+                        address: _addressDetailController.text.trim(),
+                        isDefault: _addressIsDefaultController,
+                      );
+                      Navigator.of(dialogContext).pop(newAddress);
+                    },
+                  ),
+                ],
+              );
+            }
         );
       },
     );
 
-    if (newOrEditedAddress != null) {
+    if (resultAddress != null) {
       try {
         if (isEditing) {
-          // Chỉ gọi API nếu địa chỉ mới khác địa chỉ cũ
-          if (newOrEditedAddress != oldAddress) {
-            await _userService.editShippingAddress(uid, oldAddress!, newOrEditedAddress);
+          // Chỉ gọi API nếu có thay đổi
+          if (resultAddress != oldAddressModel) { // So sánh bằng AddressModel.operator==
+            await _userService.editShippingAddress(uid, oldAddressModel!, resultAddress);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Đã sửa địa chỉ cho "$userName".'), backgroundColor: TColors.success),
             );
           } else {
-            // Không có gì thay đổi
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Địa chỉ không thay đổi.'), backgroundColor: Colors.grey),
+              const SnackBar(content: Text('Địa chỉ không có thay đổi.'), backgroundColor: Colors.grey),
             );
           }
         } else { // Thêm mới
-          await _userService.addShippingAddress(uid, newOrEditedAddress);
+          await _userService.addShippingAddress(uid, resultAddress);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Đã thêm địa chỉ mới cho "$userName".'), backgroundColor: TColors.success),
           );
@@ -456,14 +457,25 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     }
   }
 
+
   // --- Dialog xác nhận xóa địa chỉ ---
-  Future<void> _confirmRemoveAddress(BuildContext context, String uid, String userName, String addressToRemove) async {
+  Future<void> _confirmRemoveAddress(BuildContext context, String uid, String userName, AddressModel addressToRemove) async {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Xác nhận xóa địa chỉ'),
-          content: Text('Bạn có chắc muốn xóa địa chỉ:\n"$addressToRemove"\ncủa người dùng "$userName"?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Bạn có chắc muốn xóa địa chỉ của "$userName"?'),
+              const SizedBox(height: Sizes.sm),
+              Text('Tên: ${addressToRemove.name}'),
+              Text('SĐT: ${addressToRemove.phone}'),
+              Text('Địa chỉ: ${addressToRemove.address}', style: const TextStyle(fontStyle: FontStyle.italic)),
+            ],
+          ),
           actions: <Widget>[
             TextButton(
               child: const Text('Hủy'),
@@ -493,8 +505,54 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     }
   }
 
-  // --- Các dialog ban/unban và sửa vai trò giữ nguyên ---
+  // --- MỚI: Dialog xác nhận đặt làm địa chỉ mặc định ---
+  Future<void> _confirmSetDefaultAddress(BuildContext context, String uid, String userName, AddressModel addressToSetDefault) async {
+    if (addressToSetDefault.isDefault) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Địa chỉ này đã là mặc định.'), backgroundColor: Colors.grey),
+      );
+      return;
+    }
+
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Đặt làm địa chỉ mặc định?'),
+          content: Text('Bạn có muốn đặt địa chỉ "${addressToSetDefault.address.substring(0, (addressToSetDefault.address.length > 30) ? 30 : addressToSetDefault.address.length)}..." của "$userName" làm mặc định không?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Hủy'),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: TColors.primary),
+              child: const Text('Đặt làm mặc định', style: TextStyle(color: Colors.white)),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      try {
+        await _userService.setDefaultShippingAddress(uid, addressToSetDefault);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Đã đặt địa chỉ làm mặc định cho "$userName".'), backgroundColor: TColors.success),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi đặt địa chỉ mặc định: $e'), backgroundColor: TColors.error),
+        );
+      }
+    }
+  }
+
+
+  // --- Các dialog khác giữ nguyên (ban/unban, sửa tên, sửa vai trò, sửa điểm loyalty) ---
   Future<void> _confirmToggleBanStatus(BuildContext context, String uid, String userName, bool isCurrentlyBanned) async {
+    // ... (code giữ nguyên) ...
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -537,15 +595,16 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   }
 
   Future<void> _showEditFullNameDialog(BuildContext context, String uid, String currentFullName) async {
-    _fullNameController.text = currentFullName; // Đặt tên hiện tại vào controller
+    // ... (code giữ nguyên) ...
+    _fullNameController.text = currentFullName;
     final String? newFullName = await showDialog<String>(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Sửa họ và tên người dùng'), // Tiêu đề chung hơn vì userName có thể thay đổi
+          title: const Text('Sửa họ và tên người dùng'),
           content: TextField(
             controller: _fullNameController,
-            textCapitalization: TextCapitalization.words, // Tự động viết hoa chữ cái đầu mỗi từ
+            textCapitalization: TextCapitalization.words,
             decoration: const InputDecoration(
               labelText: 'Họ và tên mới',
               hintText: 'Nhập họ và tên',
@@ -594,6 +653,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   }
 
   Future<void> _showEditRoleDialog(BuildContext context, String uid, String userName, String currentRole) async {
+    // ... (code giữ nguyên) ...
     _selectedRoleDialog = currentRole;
     final List<String> roles = ['customer', 'admin'];
 
@@ -666,8 +726,62 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       );
     }
   }
-  // MỚI: Dialog chỉnh sửa điểm Loyalty
+
+  Future<void> _showEditPhoneNumberDialog(BuildContext context, String uid, String userName, String currentPhoneNumber) async {
+    // ... (code giữ nguyên) ...
+    _phoneNumberController.text = currentPhoneNumber;
+    final String? newPhoneNumber = await showDialog<String>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text('Sửa SĐT cho "$userName"'),
+          content: TextField(
+            controller: _phoneNumberController,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+              labelText: 'Số điện thoại mới',
+              hintText: 'Nhập số điện thoại',
+              prefixIcon: Icon(Iconsax.call),
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Hủy'),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+            ),
+            ElevatedButton(
+              child: const Text('Lưu'),
+              onPressed: () {
+                if (_phoneNumberController.text.trim().isNotEmpty) {
+                  Navigator.of(dialogContext).pop(_phoneNumberController.text.trim());
+                } else {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    const SnackBar(content: Text('Số điện thoại không được để trống'), backgroundColor: TColors.warning),
+                  );
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    if (newPhoneNumber != null && newPhoneNumber != currentPhoneNumber) {
+      try {
+        await _userService.updateUserPhoneNumber(uid, newPhoneNumber);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Đã cập nhật SĐT cho "$userName".'), backgroundColor: TColors.success),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi cập nhật SĐT: $e'), backgroundColor: TColors.error),
+        );
+      }
+    }
+  }
   Future<void> _showEditLoyaltyPointsDialog(BuildContext context, String uid, String userName, int currentPoints) async {
+    // ... (code giữ nguyên) ...
     _loyaltyPointsController.text = currentPoints.toString();
     final String? newPointsStr = await showDialog<String>(
       context: context,
@@ -678,7 +792,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             controller: _loyaltyPointsController,
             keyboardType: TextInputType.number,
             inputFormatters: <TextInputFormatter>[
-              FilteringTextInputFormatter.digitsOnly // Chỉ cho phép nhập số
+              FilteringTextInputFormatter.digitsOnly
             ],
             decoration: const InputDecoration(
               labelText: 'Số điểm mới',
@@ -738,12 +852,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   }
 }
 
-// Tiện ích mở rộng String (giữ nguyên)
 extension StringExtension on String {
   String capitalize() {
-    if (isEmpty) {
-      return "";
-    }
+    if (isEmpty) return "";
     return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
   }
 }

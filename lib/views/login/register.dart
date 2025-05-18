@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/service/AuthService.dart';
-import '../../core/service/UserService.dart'; // Cần import để xử lý FirebaseAuthException
+import '../../core/service/UserService.dart';
+import '../../data/userModels/address_model.dart'; // Cần import để xử lý FirebaseAuthException
 // Import các Services đã tạo
 
 class RegisterDialog extends StatefulWidget {
@@ -48,6 +49,7 @@ class _RegisterDialogState extends State<RegisterDialog> {
       try {
         // BƯỚC 1: Đăng ký tài khoản với Firebase Authentication
         // Sử dụng AuthService để gọi hàm đăng ký
+
         User? user = await _authService.signUpWithEmailPassword(
           _emailController.text.trim(), // Lấy email từ controller và loại bỏ khoảng trắng
           _passwordController.text, // Lấy mật khẩu từ controller
@@ -56,14 +58,25 @@ class _RegisterDialogState extends State<RegisterDialog> {
         // Nếu đăng ký Firebase Auth thành công (user không null)
         if (user != null) {
           print("User registered in Auth: ${user.uid}");
+          AddressModel? initialAddress;
+          String addressString = _addressController.text.trim();
+          String fullNameString = _fullNameController.text.trim();
 
+          if (addressString.isNotEmpty) {
+            initialAddress = AddressModel(
+              name: fullNameString, // Lấy tên người dùng làm tên người nhận ban đầu
+              phone: "", // Hoặc mainPhoneString nếu có. Để trống nếu không có SĐT riêng cho địa chỉ.
+              address: addressString,
+              isDefault: true,
+            );
+          }
           // BƯỚC 2: LƯU THÔNG TIN HỒ SƠ VÀO FIRESTORE
           // Sử dụng UserService để gọi hàm lưu hồ sơ
           await _userService.createUserProfile(
             uid: user.uid, // Sử dụng UID của người dùng vừa đăng ký làm ID document
             email: user.email ?? _emailController.text.trim(), // Lấy email từ user hoặc controller
             fullName: _fullNameController.text.trim(), // Lấy họ tên từ controller
-            shippingAddress: _addressController.text.trim(), // Lấy địa chỉ từ controller
+            initialShippingAddress: initialAddress, // Lấy địa chỉ từ controller
           );
 
           print("User profile saved in Firestore for UID: ${user.uid}");

@@ -1,6 +1,7 @@
 import 'package:ecommerce_computer_client/views/home/home.dart';
 import 'package:flutter/material.dart';
 import '../../core/service/AuthService.dart';
+import '../../core/service/UserService.dart';
 import '../login/register.dart'; // Assuming RegisterDialog is in this file
 import 'package:firebase_auth/firebase_auth.dart'; // Import for FirebaseAuthException
 
@@ -25,74 +26,99 @@ class _LoginDialogState extends State<LoginDialog> {
   // State variables for loading and error
   bool _isLoading = false;
   String? _errorMessage;
-
+  final UserService _userService = UserService();
   Future<void> _submitLogin() async {
-    // Clear previous error message
     setState(() {
       _errorMessage = null;
+      _isLoading = true;
     });
 
     if (_formKey.currentState!.validate()) {
-      // Form is valid, show loading and attempt login
-      setState(() {
-        _isLoading = true;
-      });
+      final String email = _emailController.text.trim();
+      final String password = _passwordController.text;
 
       try {
-        // Call the sign-in method from AuthService
+        // BƯỚC 1: Đăng nhập bằng Firebase Auth
         User? user = await _authService.signInWithEmailPassword(
-          _emailController.text.trim(), // Use email controller
-          _passwordController.text,
+          email,
+          password,
         );
 
-        // Login successful (AuthService returns User if successful)
+        // BƯỚC 2: Nếu đăng nhập Auth thành công, kiểm tra trạng thái isBanned từ Firestore
         if (user != null) {
-          print("User logged in: ${user.uid}");
-          // Navigate to Home and remove all previous routes
+
+          Map<String, dynamic>? userProfile = await _userService.getUserProfile(user.uid);
+
+          if (userProfile == null) {
+            // Trường hợp hiếm: User tồn tại trong Auth nhưng không có profile trong Firestore
+            // Có thể xử lý bằng cách tạo profile ở đây hoặc báo lỗi.
+            // Tạm thời, chúng ta sẽ đăng xuất và báo lỗi.
+            await _authService.signOut(); // Đăng xuất người dùng
+            setState(() {
+              _errorMessage = 'Không tìm thấy thông tin hồ sơ người dùng. Vui lòng thử lại.';
+              // _isLoading = false; // Sẽ được set trong finally
+            });
+            print("Login Aborted: User ${user.uid} authenticated but no Firestore profile found.");
+            return; // Dừng quá trình
+          }
+
+          final bool isBanned = userProfile['isBanned'] as bool? ?? false;
+          if (isBanned) {
+            // Nếu người dùng bị ban, đăng xuất họ ngay lập tức
+            await _authService.signOut();
+            setState(() {
+              _errorMessage = 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.';
+              // _isLoading = false; // Sẽ được set trong finally
+            });
+            print("Login Aborted: User ${user.uid} is banned.");
+            return; // Dừng quá trình
+          }
+
+          // Nếu không bị ban và có profile, đăng nhập thành công
+          print("User logged in successfully: ${user.uid}");
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const Home()),
-            (route) => false, // Remove all routes below Home
+                (route) => false,
           );
         } else {
-          // This case is less common with signInWithEmailAndPassword as it usually throws an exception,
-          // but handling it ensures robustness.
+          // Trường hợp này ít xảy ra vì signInWithEmailPassword thường ném lỗi nếu thất bại
           setState(() {
-            _errorMessage = 'Đăng nhập không thành công (lỗi không xác định).';
+            _errorMessage = 'Đăng nhập không thành công (lỗi không xác định từ Auth).';
+            // _isLoading = false; // Sẽ được set trong finally
           });
         }
       } on FirebaseAuthException catch (e) {
-        // Handle specific Firebase Auth errors
         String message;
         if (e.code == 'user-not-found') {
           message = 'Không tìm thấy người dùng cho email này.';
-        } else if (e.code == 'wrong-password' ||
-            e.code == 'invalid-credential') {
+        } else if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
           message = 'Sai mật khẩu.';
         } else if (e.code == 'invalid-email') {
           message = 'Định dạng email không hợp lệ.';
         } else if (e.code == 'user-disabled') {
-          message = 'Tài khoản người dùng đã bị vô hiệu hóa.';
-        }
-        // Add other specific error codes if needed
-        else {
+          message = 'Tài khoản người dùng đã bị vô hiệu hóa bởi hệ thống.';
+        } else {
           message = 'Đã xảy ra lỗi xác thực: ${e.message}';
         }
         print("Firebase Auth Error during login: ${e.code}");
         setState(() {
           _errorMessage = message;
+          // _isLoading = false; // Sẽ được set trong finally
         });
       } catch (e) {
-        // Handle any other potential errors (network issues, etc.)
+        // Lỗi từ UserService.getUserProfile hoặc các lỗi mạng khác
         print("General Error during login: $e");
         setState(() {
-          _errorMessage = 'Đã xảy ra lỗi không xác định: $e';
+          _errorMessage = 'Đã xảy ra lỗi: $e';
+          // _isLoading = false; // Sẽ được set trong finally
         });
       } finally {
-        // Always stop loading after the attempt
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }

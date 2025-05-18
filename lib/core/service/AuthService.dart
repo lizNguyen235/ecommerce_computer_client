@@ -126,18 +126,6 @@ class AuthService {
   }
 
 
-  Future<void> signInAnonymously() async {
-    try {
-      UserCredential userCredential = await FirebaseAuth.instance.signInAnonymously();
-      User? user = userCredential.user;
-
-      if (user != null) {
-        print('Đăng nhập ẩn danh thành công! UID: ${user.uid}');
-      }
-    } catch (e) {
-      print('Lỗi khi đăng nhập ẩn danh: $e');
-    }
-  }
 
   Future<void> upgradeAnonymousUserToEmail({
     required String email,

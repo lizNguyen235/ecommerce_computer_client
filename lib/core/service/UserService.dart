@@ -1,54 +1,53 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../data/userModels/address_model.dart';
 import 'AuthService.dart'; // Cần User để lấy UID
-
 class UserService {
-  // Khởi tạo instance của Firestore
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  AuthService _auth = AuthService();
-  // Tham chiếu đến collection 'users' trong Firestore (tên collection có thể tùy chỉnh)
+  final AuthService _auth = AuthService(); // Giữ lại nếu bạn dùng ở đâu đó
   final CollectionReference usersCollection =
   FirebaseFirestore.instance.collection('users');
 
-  // --- Phương thức tạo/lưu thông tin hồ sơ người dùng ban đầu ---
-  // Thường gọi sau khi người dùng đăng ký thành công qua Firebase Auth
   Future<void> createUserProfile({
-    required String uid, // UID của người dùng từ Firebase Auth
-    required String email, // Email cũng từ Firebase Auth
+    required String uid,
+    required String email,
     required String fullName,
-    required String shippingAddress,
-    // Thêm các trường thông tin khác nếu cần thiết cho hồ sơ
+    // shippingAddress ban đầu có thể là một AddressModel hoặc null/rỗng
+    AddressModel? initialShippingAddress, // <<--- THAY ĐỔI
   }) async {
     try {
-      // Sử dụng UID của người dùng làm ID cho document trong collection 'users'
+      List<Map<String, dynamic>> shippingAddressesList = [];
+      if (initialShippingAddress != null) {
+        // Nếu đây là địa chỉ đầu tiên, có thể đặt isDefault = true
+        shippingAddressesList.add(initialShippingAddress.copyWith(isDefault: true).toMap());
+      }
+
       await usersCollection.doc(uid).set({
-        'uid': uid, // Lưu UID (có thể dư vì nó là doc ID, nhưng đôi khi tiện)
-        'email': email, // Lưu email (cũng có trong Auth nhưng tiện truy vấn)
+        'uid': uid,
+        'email': email,
         'fullName': fullName,
-        'role': 'customer', // Mặc định là 'customer', có thể thay đổi sau
-        'shippingAddress': [shippingAddress], // Danh sách địa chỉ giao hàng
-        'createdAt': Timestamp.now(), // Thời gian tạo hồ sơ (tùy chọn)
-        'updatedAt': Timestamp.now(), // Thời gian cập nhật hồ sơ (tùy chọn)
-        'avatarUrl': '', // Nếu có avatar, có thể lưu URL ở đây
-        'phoneNumber': '', // Nếu có số điện thoại, có thể lưu ở đây
-        'isBanned' : false,
-        'loyaltyPoints': 0,// Trạng thái bị cấm (nếu cần)
-        'chooseAddress': 0, // Địa chỉ giao hàng mặc định (nếu có nhiều địa chỉ)
-        // Thêm các trường khác (ví dụ: số điện thoại, avatarUrl...)
+        'role': 'customer',
+        'shippingAddress': shippingAddressesList, // <<--- LÀ MỘT MẢNG MAP
+        'createdAt': Timestamp.now(),
+        'updatedAt': Timestamp.now(),
+        'avatarUrl': '',
+        'phoneNumber': '', // SĐT chính của user, khác với SĐT trong địa chỉ
+        'isBanned': false,
+        'loyaltyPoints': 0,
+        // 'chooseAddress' không còn cần thiết nếu dùng isDefault trong AddressModel
       });
       print("UserService: User profile created successfully for UID: $uid");
     } catch (e) {
       print("UserService Error (createUserProfile): $e");
-      // Ném lại ngoại lệ để lớp gọi (ví dụ: RegisterDialog) có thể bắt và xử lý
       throw e;
     }
   }
 
-  // --- MỚI: Phương thức cập nhật điểm khách hàng thân thiết ---
+  // --- Phương thức cập nhật điểm khách hàng thân thiết --- (Giữ nguyên)
   Future<void> updateUserLoyaltyPoints(String uid, int newPoints) async {
+    // ... (code giữ nguyên) ...
     try {
-      // Kiểm tra điểm có hợp lệ không (ví dụ: không âm)
       if (newPoints < 0) {
         throw Exception("Điểm khách hàng thân thiết không thể là số âm.");
       }
@@ -63,118 +62,99 @@ class UserService {
     }
   }
 
-  // --- Phương thức đọc thông tin hồ sơ người dùng ---
-  // Có thể gọi sau khi người dùng đăng nhập hoặc khi load profile page
+
+  // --- Phương thức đọc thông tin hồ sơ người dùng --- (Giữ nguyên)
   Future<Map<String, dynamic>?> getUserProfile(String uid) async {
+    // ... (code giữ nguyên) ...
     try {
       DocumentSnapshot doc = await usersCollection.doc(uid).get();
       if (doc.exists) {
         print("UserService: User profile loaded for UID: $uid");
-        // Ép kiểu dữ liệu sang Map<String, dynamic>
         return doc.data() as Map<String, dynamic>?;
       } else {
         print("UserService: No user profile found for UID: $uid");
-        return null; // Trả về null nếu không tìm thấy document
+        return null;
       }
     } catch (e) {
       print("UserService Error (getUserProfile): $e");
-      throw e; // Ném lại ngoại lệ
+      throw e;
     }
   }
 
-  // --- Phương thức cập nhật thông tin hồ sơ người dùng ---
-  // Có thể gọi khi người dùng chỉnh sửa thông tin cá nhân
+  // --- Phương thức cập nhật thông tin hồ sơ người dùng --- (Giữ nguyên)
   Future<void> updateUserProfile(String uid, Map<String, dynamic> data) async {
+    // ... (code giữ nguyên) ...
     try {
       await usersCollection.doc(uid).update(data);
       print("UserService: User profile updated for UID: $uid");
     } catch (e) {
       print("UserService Error (updateUserProfile): $e");
-      throw e; // Ném lại ngoại lệ
+      throw e;
     }
   }
-// Bạn có thể thêm các phương thức khác liên quan đến dữ liệu người dùng tại đây
-// ví dụ: xóa hồ sơ, thêm địa chỉ phụ...
-  // --- Phương thức trả về vai trò (role) của người dùng hiện tại ---
-  // Tự lấy UID của người dùng đang đăng nhập
-  Future<String> getCurrentUserRole() async {
-    // Lấy người dùng hiện tại từ Firebase Auth
-    User? user = _auth.getCurrentUser(); // Sử dụng instance Auth trong UserService
 
-    // Kiểm tra xem có người dùng nào đang đăng nhập không
+  // --- Phương thức trả về vai trò (role) của người dùng hiện tại --- (Giữ nguyên)
+  Future<String> getCurrentUserRole() async {
+    // ... (code giữ nguyên) ...
+    User? user = _auth.getCurrentUser();
     if (user == null) {
       print("UserService: No user logged in. Cannot get role.");
-      // Nếu không có người dùng, mặc định trả về role 'guest' hoặc 'anonymous'
-      return 'guest'; // hoặc một role phù hợp cho người dùng chưa đăng nhập
+      return 'guest';
     }
-
-    // Nếu có người dùng đăng nhập, sử dụng UID của họ để lấy profile
     String uid = user.uid;
-
     try {
-      // Lấy document hồ sơ của người dùng hiện tại
       DocumentSnapshot doc = await usersCollection.doc(uid).get();
-
-      // Kiểm tra xem document có tồn tại và có dữ liệu không
       if (doc.exists && doc.data() != null) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        // Lấy giá trị của trường 'role', mặc định là 'user' nếu không có
         String role = data['role']?.toString() ?? 'user';
         print("UserService: Fetched role '$role' for current user UID: $uid");
         return role;
       } else {
-        // Document không tồn tại hoặc dữ liệu là null, mặc định gán role là 'user'
         print("UserService: No profile found or data is null for current user UID: $uid. Returning default role 'user'");
         return 'user';
       }
     } catch (e) {
-      // Xử lý lỗi trong quá trình đọc dữ liệu
       print("UserService Error (getCurrentUserRole): $e");
-      // Nếu có lỗi khi đọc profile, vẫn nên trả về một role mặc định
-      // hoặc ném ngoại lệ tùy thuộc vào chiến lược xử lý lỗi của bạn.
-      // Trả về 'user' là một lựa chọn an toàn trong nhiều trường hợp.
-      return 'user'; // Trả về mặc định 'user' ngay cả khi có lỗi đọc
-      // Hoặc ném ngoại lệ nếu bạn muốn lớp gọi xử lý lỗi này:
-      // throw Exception("Failed to get current user role: $e");
+      return 'user';
     }
   }
-  // Giúp UI cập nhật tự động khi có thay đổi trong Firestore
+
+  // Giúp UI cập nhật tự động khi có thay đổi trong Firestore (Giữ nguyên)
   Stream<List<Map<String, dynamic>>> getAllUsers() {
+    // ... (code giữ nguyên) ...
     try {
       return usersCollection.snapshots().map((snapshot) {
         return snapshot.docs.map((doc) {
           final data = doc.data() as Map<String, dynamic>;
-          // Đảm bảo 'uid' luôn có trong dữ liệu trả về, lấy từ ID của document
           data['uid'] = doc.id;
           return data;
         }).toList();
       });
     } catch (e) {
       print("UserService Error (getAllUsers): $e");
-      // Trả về một stream lỗi để StreamBuilder có thể xử lý
       return Stream.error(e);
     }
   }
 
-  // --- Phương thức thay đổi trạng thái cấm của người dùng ---
+
+  // --- Phương thức thay đổi trạng thái cấm của người dùng --- (Giữ nguyên)
   Future<void> toggleUserBanStatus(String uid, bool currentIsBanned) async {
+    // ... (code giữ nguyên) ...
     try {
       await usersCollection.doc(uid).update({
-        'isBanned': !currentIsBanned, // Đảo ngược trạng thái cấm hiện tại
+        'isBanned': !currentIsBanned,
         'updatedAt': Timestamp.now(),
       });
-      print(
-          "UserService: User ban status toggled for UID: $uid to ${!currentIsBanned}");
+      print("UserService: User ban status toggled for UID: $uid to ${!currentIsBanned}");
     } catch (e) {
       print("UserService Error (toggleUserBanStatus): $e");
       throw e;
     }
   }
 
-  // --- Phương thức cập nhật vai trò người dùng ---
+  // --- Phương thức cập nhật vai trò người dùng --- (Giữ nguyên)
   Future<void> updateUserRole(String uid, String newRole) async {
-    // Có thể thêm kiểm tra xem newRole có hợp lệ không nếu cần
-    // Ví dụ: if (!['customer', 'admin', 'editor'].contains(newRole)) throw Exception('Invalid role');
+    // ... (code giữ nguyên) ...
     try {
       await usersCollection.doc(uid).update({
         'role': newRole,
@@ -187,8 +167,9 @@ class UserService {
     }
   }
 
-  // --- Phương thức cập nhật số điện thoại người dùng ---
+  // --- Phương thức cập nhật số điện thoại người dùng (SĐT chính) --- (Giữ nguyên)
   Future<void> updateUserPhoneNumber(String uid, String phoneNumber) async {
+    // ... (code giữ nguyên) ...
     try {
       await usersCollection.doc(uid).update({
         'phoneNumber': phoneNumber,
@@ -202,13 +183,33 @@ class UserService {
   }
 
   // --- Phương thức thêm một địa chỉ giao hàng mới ---
-  Future<void> addShippingAddress(String uid, String newAddress) async {
+  Future<void> addShippingAddress(String uid, AddressModel newAddress) async { // <<--- THAY ĐỔI
     try {
+      // Nếu đây là địa chỉ duy nhất hoặc người dùng muốn đặt làm mặc định
+      // bạn có thể cần logic để cập nhật isDefault cho các địa chỉ khác.
+      // Ví dụ đơn giản: nếu chưa có địa chỉ nào, đặt cái này làm mặc định.
+      DocumentSnapshot userDoc = await usersCollection.doc(uid).get();
+      AddressModel addressToAdd = newAddress;
+      if (userDoc.exists) {
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        List<dynamic> currentAddressesDynamic = userData['shippingAddress'] ?? [];
+        if (currentAddressesDynamic.isEmpty && !newAddress.isDefault) {
+          addressToAdd = newAddress.copyWith(isDefault: true);
+        } else if (newAddress.isDefault) {
+          // Nếu địa chỉ mới được đặt làm mặc định, bỏ mặc định ở các địa chỉ cũ
+          List<Map<String, dynamic>> updatedAddresses = currentAddressesDynamic.map((addrMap) {
+            return AddressModel.fromMap(addrMap as Map<String,dynamic>).copyWith(isDefault: false).toMap();
+          }).toList();
+          await usersCollection.doc(uid).update({'shippingAddress': updatedAddresses});
+        }
+      }
+
+
       await usersCollection.doc(uid).update({
-        'shippingAddress': FieldValue.arrayUnion([newAddress]), // Thêm vào mảng
+        'shippingAddress': FieldValue.arrayUnion([addressToAdd.toMap()]), // Thêm map của AddressModel
         'updatedAt': Timestamp.now(),
       });
-      print("UserService: Added new shipping address '$newAddress' for UID: $uid");
+      print("UserService: Added new shipping address for UID: $uid");
     } catch (e) {
       print("UserService Error (addShippingAddress): $e");
       throw e;
@@ -216,13 +217,29 @@ class UserService {
   }
 
   // --- Phương thức xóa một địa chỉ giao hàng ---
-  Future<void> removeShippingAddress(String uid, String addressToRemove) async {
+  Future<void> removeShippingAddress(String uid, AddressModel addressToRemove) async { // <<--- THAY ĐỔI
     try {
       await usersCollection.doc(uid).update({
-        'shippingAddress': FieldValue.arrayRemove([addressToRemove]), // Xóa khỏi mảng
+        'shippingAddress': FieldValue.arrayRemove([addressToRemove.toMap()]), // Xóa map của AddressModel
         'updatedAt': Timestamp.now(),
       });
-      print("UserService: Removed shipping address '$addressToRemove' for UID: $uid");
+      print("UserService: Removed shipping address for UID: $uid");
+      // Kiểm tra nếu địa chỉ bị xóa là mặc định và còn địa chỉ khác, đặt địa chỉ đầu tiên làm mặc định
+      DocumentSnapshot userDoc = await usersCollection.doc(uid).get();
+      if (userDoc.exists && addressToRemove.isDefault) {
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        List<dynamic> currentAddressesDynamic = userData['shippingAddress'] ?? [];
+        if (currentAddressesDynamic.isNotEmpty) {
+          List<Map<String, dynamic>> addresses = currentAddressesDynamic.map((e) => e as Map<String,dynamic>).toList();
+          // Kiểm tra xem có địa chỉ mặc định nào khác không
+          bool hasDefault = addresses.any((addrMap) => AddressModel.fromMap(addrMap).isDefault);
+          if(!hasDefault) {
+            // Nếu không, đặt địa chỉ đầu tiên làm mặc định
+            addresses[0] = AddressModel.fromMap(addresses[0]).copyWith(isDefault: true).toMap();
+            await usersCollection.doc(uid).update({'shippingAddress': addresses});
+          }
+        }
+      }
     } catch (e) {
       print("UserService Error (removeShippingAddress): $e");
       throw e;
@@ -230,33 +247,87 @@ class UserService {
   }
 
   // --- Phương thức sửa một địa chỉ giao hàng ---
-  // Firestore không hỗ trợ cập nhật trực tiếp một phần tử trong mảng theo index.
-  // Cách tiếp cận phổ biến là đọc toàn bộ mảng, sửa đổi trong client, rồi ghi lại toàn bộ mảng.
-  Future<void> editShippingAddress(String uid, String oldAddress, String newAddress) async {
+  Future<void> editShippingAddress(String uid, AddressModel oldAddress, AddressModel newAddressData) async { // <<--- THAY ĐỔI
     try {
       DocumentSnapshot userDoc = await usersCollection.doc(uid).get();
       if (userDoc.exists) {
         Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
         List<dynamic> currentAddressesDynamic = userData['shippingAddress'] ?? [];
-        // Chuyển đổi sang List<String> để đảm bảo kiểu dữ liệu
-        List<String> currentAddresses = currentAddressesDynamic.map((e) => e.toString()).toList();
+        List<Map<String, dynamic>> updatedAddresses = [];
+        bool found = false;
 
-        int index = currentAddresses.indexOf(oldAddress);
-        if (index != -1) {
-          currentAddresses[index] = newAddress; // Sửa địa chỉ tại vị trí tìm thấy
-          await usersCollection.doc(uid).update({
-            'shippingAddress': currentAddresses, // Ghi đè lại toàn bộ mảng đã sửa
-            'updatedAt': Timestamp.now(),
-          });
-          print("UserService: Edited shipping address from '$oldAddress' to '$newAddress' for UID: $uid");
-        } else {
-          print("UserService Error: Old address '$oldAddress' not found for editing. UID: $uid");
-          // Bạn có thể ném một Exception ở đây nếu muốn xử lý lỗi này ở UI
-          // throw Exception("Old address not found");
+        for (var addrMap in currentAddressesDynamic) {
+          AddressModel currentAddr = AddressModel.fromMap(addrMap as Map<String, dynamic>);
+          if (currentAddr == oldAddress) { // So sánh bằng AddressModel.operator==
+            // Nếu địa chỉ mới được đặt làm mặc định, đảm bảo các địa chỉ khác không phải mặc định
+            if (newAddressData.isDefault) {
+              updatedAddresses = currentAddressesDynamic.map((addr) {
+                return AddressModel.fromMap(addr as Map<String,dynamic>).copyWith(isDefault: false).toMap();
+              }).toList();
+              // Tìm lại vị trí của oldAddress trong list mới này để cập nhật
+              int editIndex = -1;
+              for(int i=0; i < updatedAddresses.length; i++){
+                if(AddressModel.fromMap(updatedAddresses[i]) == oldAddress) {
+                  editIndex = i;
+                  break;
+                }
+              }
+              if(editIndex != -1){
+                updatedAddresses[editIndex] = newAddressData.toMap();
+              } else {
+                // Should not happen if logic is correct
+                updatedAddresses.add(newAddressData.toMap());
+              }
+
+            } else {
+              updatedAddresses.add(newAddressData.toMap());
+            }
+            found = true;
+          } else {
+            // Nếu địa chỉ đang xét không phải là cái đang sửa,
+            // và địa chỉ mới được đặt làm mặc định, thì bỏ isDefault của địa chỉ này.
+            if (newAddressData.isDefault) {
+              updatedAddresses.add(currentAddr.copyWith(isDefault: false).toMap());
+            } else {
+              updatedAddresses.add(currentAddr.toMap());
+            }
+          }
         }
+        // Xử lý trường hợp nếu oldAddress không tìm thấy nhưng newAddressData.isDefault là true
+        // (cần đảm bảo các địa chỉ khác không phải là mặc định)
+        // Trường hợp này ít xảy ra nếu oldAddress luôn được đảm bảo có trong list.
+        // Nếu oldAddress không tìm thấy, có thể bạn muốn add newAddressData như một địa chỉ mới
+        // Hoặc báo lỗi.
+        if(!found && newAddressData.isDefault) {
+          updatedAddresses = currentAddressesDynamic.map((addrMap) {
+            return AddressModel.fromMap(addrMap as Map<String,dynamic>).copyWith(isDefault: false).toMap();
+          }).toList();
+          updatedAddresses.add(newAddressData.toMap()); // Coi như thêm mới nếu không tìm thấy old
+        } else if (!found) {
+          // Nếu không tìm thấy oldAddress và newAddress không phải default, không làm gì hoặc báo lỗi
+          print("UserService Error: Old address not found for editing and new address is not default. UID: $uid");
+          // throw Exception("Old address not found for editing");
+          return; // Không cập nhật
+        }
+
+
+        // Đảm bảo luôn có ít nhất một địa chỉ mặc định nếu có địa chỉ
+        if (updatedAddresses.isNotEmpty) {
+          bool hasDefault = updatedAddresses.any((addrMap) => AddressModel.fromMap(addrMap).isDefault);
+          if (!hasDefault) {
+            updatedAddresses[0] = AddressModel.fromMap(updatedAddresses[0]).copyWith(isDefault: true).toMap();
+          }
+        }
+
+
+        await usersCollection.doc(uid).update({
+          'shippingAddress': updatedAddresses,
+          'updatedAt': Timestamp.now(),
+        });
+        print("UserService: Edited shipping address for UID: $uid");
+
       } else {
         print("UserService Error: User document not found for UID: $uid");
-        // throw Exception("User not found");
       }
     } catch (e) {
       print("UserService Error (editShippingAddress): $e");
@@ -264,16 +335,43 @@ class UserService {
     }
   }
 
-  // --- Phương thức cập nhật họ và tên người dùng ---
-  Future<void> updateUserFullName(String uid, String newFullName) async {
+  // --- Phương thức đặt địa chỉ làm mặc định ---
+  Future<void>setDefaultShippingAddress(String uid, AddressModel addressToSetAsDefault) async {
     try {
-      // Kiểm tra xem newFullName có rỗng không nếu cần
+      DocumentSnapshot userDoc = await usersCollection.doc(uid).get();
+      if (userDoc.exists) {
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        List<dynamic> currentAddressesDynamic = userData['shippingAddress'] ?? [];
+
+        List<Map<String, dynamic>> updatedAddresses = currentAddressesDynamic.map((addrMap) {
+          AddressModel currentAddr = AddressModel.fromMap(addrMap as Map<String, dynamic>);
+          // So sánh dựa trên nội dung, hoặc nếu AddressModel có ID thì so sánh ID
+          return currentAddr.copyWith(isDefault: (currentAddr == addressToSetAsDefault)).toMap();
+        }).toList();
+
+        await usersCollection.doc(uid).update({
+          'shippingAddress': updatedAddresses,
+          'updatedAt': Timestamp.now(),
+        });
+        print("UserService: Set default shipping address for UID: $uid");
+      }
+    } catch (e) {
+      print("UserService Error (setDefaultShippingAddress): $e");
+      throw e;
+    }
+  }
+
+
+  // --- Phương thức cập nhật họ và tên người dùng --- (Giữ nguyên)
+  Future<void> updateUserFullName(String uid, String newFullName) async {
+    // ... (code giữ nguyên) ...
+    try {
       if (newFullName.trim().isEmpty) {
         throw Exception("Họ và tên không được để trống.");
       }
       await usersCollection.doc(uid).update({
-        'fullName': newFullName.trim(), // Cắt bỏ khoảng trắng thừa
-        'updatedAt': FieldValue.serverTimestamp(), // Luôn cập nhật thời gian
+        'fullName': newFullName.trim(),
+        'updatedAt': FieldValue.serverTimestamp(),
       });
       print("UserService: User full name updated to '$newFullName' for UID: $uid");
     } catch (e) {
