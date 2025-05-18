@@ -1,4 +1,5 @@
 import 'package:ecommerce_computer_client/consts/consts.dart';
+import 'package:ecommerce_computer_client/views/home/home.dart';
 import 'package:ecommerce_computer_client/views/login/login.dart';
 import 'package:ecommerce_computer_client/widgets/applogo_widget.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +15,7 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   changeScreen() {
     Future.delayed(const Duration(seconds: 3), () {
-      Get.to(() => const LoginDialog());
+      Get.to(() => const Home());
     });
   }
 

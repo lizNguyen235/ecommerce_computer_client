@@ -12,7 +12,7 @@ try {
   console.log("Admin App already initialized or error:", e.message);
 }
 
-
+const db = admin.firestore();
 // CẤU HÌNH NODEMAILER TRANSPORTER
 // LƯU Ý QUAN TRỌNG: KHÔNG NÊN HARDCODE CREDENTIALS TRONG MÔI TRƯỜNG PRODUCTION.
 // HÃY SỬ DỤNG FIREBASE FUNCTION CONFIGURATION:
@@ -215,6 +215,100 @@ exports.sendOrderConfirmationEmail = functions
     }
 
     return null; // Kết thúc function
+  });
+// ===== TRIGGERED FUNCTIONS =====
+
+// 1. Khi USER MỚI được tạo trong Firebase Authentication
+exports.onNewUserCreated = functions.region("asia-southeast1")
+  .auth.user().onCreate(async (user) => {
+    console.log("New user created in Auth:", user.uid, user.email);
+
+    // Cập nhật dashboardMetrics
+    const metricsRef = db.collection("dashboardMetrics").doc("global");
+    const dailyStatsId = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const dailyStatsRef = db.collection("dailyStats").doc(dailyStatsId);
+
+    try {
+      await db.runTransaction(async (transaction) => {
+        // Cập nhật dashboardMetrics
+        transaction.set(metricsRef, {
+          totalUsers: admin.firestore.FieldValue.increment(1),
+          lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+
+        // Cập nhật dailyStats
+        transaction.set(dailyStatsRef, {
+          newUsers: admin.firestore.FieldValue.increment(1),
+          date: admin.firestore.Timestamp.fromDate(new Date(new Date().setHours(0,0,0,0))), // Đầu ngày
+          lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+      });
+      console.log(`Metrics updated for new user ${user.uid}`);
+    } catch (error) {
+      console.error(`Error updating metrics for new user ${user.uid}:`, error);
+    }
+    return null;
+  });
+
+
+// 2. Khi ORDER MỚI được tạo trong Firestore
+exports.onNewOrderCreated = functions.region("asia-southeast1")
+  .firestore.document("orders/{orderId}")
+  .onCreate(async (snap, context) => {
+    const orderData = snap.data();
+    const orderId = context.params.orderId;
+
+    if (!orderData) {
+      console.log(`No data for new order ${orderId}.`);
+      return null;
+    }
+
+    const totalAmount = orderData.totalAmount || 0;
+    const items = orderData.items || [];
+    const orderTimestamp = orderData.createdAt || admin.firestore.FieldValue.serverTimestamp(); // Dùng createdAt từ order
+
+    // Cập nhật dashboardMetrics
+    const metricsRef = db.collection("dashboardMetrics").doc("global");
+    const dailyStatsId = (orderTimestamp.toDate ? orderTimestamp.toDate() : new Date()).toISOString().split('T')[0]; // YYYY-MM-DD dựa trên ngày đặt hàng
+    const dailyStatsRef = db.collection("dailyStats").doc(dailyStatsId);
+
+    try {
+      await db.runTransaction(async (transaction) => {
+        // Cập nhật dashboardMetrics
+        transaction.set(metricsRef, {
+          totalOrders: admin.firestore.FieldValue.increment(1),
+          totalRevenue: admin.firestore.FieldValue.increment(totalAmount),
+          lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+
+        // Cập nhật dailyStats
+        const orderDateStartOfDay = orderTimestamp.toDate ? new Date(orderTimestamp.toDate().setHours(0,0,0,0)) : new Date(new Date().setHours(0,0,0,0));
+        transaction.set(dailyStatsRef, {
+          ordersCount: admin.firestore.FieldValue.increment(1),
+          revenue: admin.firestore.FieldValue.increment(totalAmount),
+          date: admin.firestore.Timestamp.fromDate(orderDateStartOfDay),
+          lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+
+        // Cập nhật productSalesSummary cho từng item trong đơn hàng
+        for (const item of items) {
+          if (item && item.productId && item.quantity > 0) {
+            const productSummaryRef = db.collection("productSalesSummary").doc(item.productId);
+            transaction.set(productSummaryRef, {
+              productId: item.productId,
+              productName: item.name || "Unknown Product", // Lấy tên từ item của order
+              totalQuantitySold: admin.firestore.FieldValue.increment(item.quantity),
+              lastSaleDate: orderTimestamp, // Lưu thời gian bán cuối cùng
+              // category: item.category || "Unknown", // Nếu bạn lưu category trong order item
+            }, { merge: true });
+          }
+        }
+      });
+      console.log(`Metrics and product sales updated for new order ${orderId}`);
+    } catch (error) {
+      console.error(`Error updating metrics for new order ${orderId}:`, error);
+    }
+    return null;
   });
 
 
