@@ -122,4 +122,12 @@ class ProductRepository extends GetxController {
 
     return q.limit(limit).get();
   }
+
+  Future<ProductModel?> getProductById(String id) async {
+    final snap = await _db.doc(id).get();
+    if (snap.exists) {
+      return ProductModel.fromSnapshot(snap);
+    }
+    return null;
+  }
 }
