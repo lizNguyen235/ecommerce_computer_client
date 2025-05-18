@@ -65,7 +65,7 @@ class CategoryDetail extends StatelessWidget {
                           id: productDoc.id,
                           price: (data['price'] as num?)?.toDouble() ?? 0.0,
                           thumbnail: data['thumbnail'] ?? '',
-                          title: data['name'] ?? 'No Title',
+                          title: data['title'] ?? 'No Title',
                           stock: data['stock'] ?? 0,
                           description: data['description'] ?? 'No description',
                           brand: data['brand'] ?? 'No Brand',
