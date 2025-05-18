@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecommerce_computer_client/consts/consts.dart';
 import 'package:ecommerce_computer_client/controller/cart_controller.dart';
 import 'package:ecommerce_computer_client/controller/product_controller.dart';
@@ -8,7 +9,6 @@ import 'package:ecommerce_computer_client/views/product/product_reviews_screen.d
 import 'package:ecommerce_computer_client/widgets/appbar.dart';
 import 'package:ecommerce_computer_client/widgets/circular_icon.dart';
 import 'package:ecommerce_computer_client/widgets/curved_edges_widget.dart';
-import 'package:ecommerce_computer_client/widgets/icon_button.dart';
 import 'package:ecommerce_computer_client/widgets/product_price_text.dart';
 import 'package:ecommerce_computer_client/widgets/product_title_text.dart';
 import 'package:ecommerce_computer_client/widgets/rounded_container.dart';
@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:readmore/readmore.dart';
+import 'package:velocity_x/velocity_x.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final ProductModel product;
@@ -27,24 +28,13 @@ class ProductDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final ProductController controller = Get.find<ProductController>();
     final CartController cartController = Get.find<CartController>();
-    final hasSale = product.salePrice > 0 && product.salePrice <= 1;
-    final double effectiveSalePrice = hasSale
-        ? controller.calculateSalePrice(product.price, product.salePrice)
-        : product.price;
-    final double salePercentage = product.salePrice * 100; // Phần trăm giảm giá
-    final stockStatus = controller.checkProductStockStatus(product.stock);
-
-    // Quản lý số lượng và trạng thái nút "Add to Cart"
-    final RxInt quantity = 1.obs; // Số lượng ban đầu là 1
-    final RxBool isButtonPressed = false.obs; // Trạng thái để tạo hiệu ứng nút
+    final RxInt quantity = 1.obs;
+    final RxBool isButtonPressed = false.obs;
 
     return Scaffold(
       backgroundColor: whiteColor,
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Sizes.defaultSpace,
-          vertical: 8.0,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: Sizes.defaultSpace, vertical: 8.0),
         decoration: BoxDecoration(
           color: Colors.grey.shade100,
           borderRadius: BorderRadius.only(
@@ -72,9 +62,7 @@ class ProductDetailScreen extends StatelessWidget {
                   color: Colors.white,
                   backgroundColor: darkFontGrey.withOpacity(0.5),
                   onPressed: () {
-                    if (quantity.value > 1) {
-                      quantity.value--;
-                    }
+                    if (quantity.value > 1) quantity.value--;
                   },
                 ),
                 const SizedBox(width: Sizes.spaceBtwItems),
@@ -99,7 +87,7 @@ class ProductDetailScreen extends StatelessWidget {
                     } else {
                       Get.snackbar(
                         'Limit Reached',
-                        'Cannot add more items. Stock limit reached!',
+                        'Cannot add product. Stock limit exceeded!',
                         snackPosition: SnackPosition.TOP,
                         backgroundColor: Colors.red.shade500,
                         colorText: whiteColor,
@@ -120,21 +108,16 @@ class ProductDetailScreen extends StatelessWidget {
                 ),
               ),
               onPressed: () {
-                // Hiệu ứng nhấn nút
                 isButtonPressed.value = true;
                 Future.delayed(const Duration(milliseconds: 300), () {
                   isButtonPressed.value = false;
                 });
-
-                // Thêm sản phẩm vào giỏ hàng với số lượng
                 for (int i = 0; i < quantity.value; i++) {
                   cartController.addToCart(product);
                 }
-
-                // Hiển thị thông báo
                 Get.snackbar(
                   'Success',
-                  'Added ${quantity.value} item${quantity.value > 1 ? 's' : ''} to cart successfully!',
+                  'Added ${quantity.value} products to cart!',
                   snackPosition: SnackPosition.TOP,
                   backgroundColor: Colors.green.shade500,
                   colorText: whiteColor,
@@ -154,17 +137,15 @@ class ProductDetailScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            /// 1 - Product Image Slider
             TCurvedEdgesWidget(
               child: Container(
                 color: Colors.grey.shade50,
                 child: Stack(
                   children: [
-                    // Main Large Image
                     SizedBox(
                       height: 400,
                       child: Padding(
-                        padding: EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(12),
                         child: Center(
                           child: RoundedImage(
                             imageUrl: product.thumbnail,
@@ -174,19 +155,13 @@ class ProductDetailScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-
-                    /// Appbar
-                    TAppBar(
-                      showBackArrow: true,
-                    ),
+                    const TAppBar(showBackArrow: true),
                   ],
                 ),
               ),
             ),
-
-            /// 2 - Product Details
             Padding(
-              padding: EdgeInsets.only(
+              padding: const EdgeInsets.only(
                 right: Sizes.defaultSpace,
                 left: Sizes.defaultSpace,
                 bottom: Sizes.defaultSpace,
@@ -194,79 +169,72 @@ class ProductDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// 2.1 - Rating and Share
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
+                  StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('products')
+                        .doc(product.id)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return const SizedBox();
+                      final data = snapshot.data!.data() as Map<String, dynamic>?;
+                      final averageRating = data?['averageRating']?.toDouble() ?? 0.0;
+                      final reviewCount = data?['reviewCount'] ?? 0;
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Icon(
-                            Icons.star,
-                            color: Colors.amber,
-                            size: Sizes.iconSm,
-                          ),
-                          const SizedBox(width: Sizes.spaceBtwItems / 2),
-                          Text.rich(
-                            TextSpan(
-                              text: "5.0",
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: darkFontGrey,
-                                fontFamily: semibold,
-                              ),
-                              children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.star, color: Colors.amber, size: Sizes.iconSm),
+                              const SizedBox(width: Sizes.spaceBtwItems / 2),
+                              Text.rich(
                                 TextSpan(
-                                  text: " (100)",
+                                  text: averageRating.toStringAsFixed(1),
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: darkFontGrey,
-                                    fontFamily: regular,
+                                    fontFamily: semibold,
                                   ),
+                                  children: [
+                                    TextSpan(
+                                      text: " ($reviewCount)",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: darkFontGrey,
+                                        fontFamily: regular,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
+                          ),
+                          IconButton(
+                            onPressed: () {},
+                            icon: const Icon(Icons.share, size: 20, color: darkFontGrey),
                           ),
                         ],
-                      ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(
-                          Icons.share,
-                          size: 20,
-                          color: darkFontGrey,
-                        ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
-
-                  /// 2.2 - Price, Title, Stock, Brand
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      /// Price & Sale Price
                       Row(
                         children: [
-                          if (hasSale)
+                          if (product.discountPercentageDisplay > 0)
                             RoundedContainer(
                               radius: Sizes.sm,
                               backgroundColor: Colors.yellow.shade600.withOpacity(0.8),
-                              padding: const EdgeInsets.symmetric(
-                                vertical: Sizes.xs,
-                                horizontal: Sizes.sm,
-                              ),
+                              padding: const EdgeInsets.symmetric(vertical: Sizes.xs, horizontal: Sizes.sm),
                               child: Text(
-                                '-${salePercentage.toStringAsFixed(0)}%',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 12,
-                                  fontFamily: semibold,
-                                ),
+                                '-${product.discountPercentageDisplay.toStringAsFixed(0)}%',
+                                style: TextStyle(color: Colors.black, fontSize: 12, fontFamily: semibold),
                               ),
                             ),
-                          if (hasSale) const SizedBox(width: Sizes.spaceBtwItems),
-                          if (hasSale)
+                          if (product.discountPercentageDisplay > 0) const SizedBox(width: Sizes.spaceBtwItems),
+                          if (product.discountPercentageDisplay > 0)
                             Text(
-                              '\$${product.price.toStringAsFixed(2)}',
+                              '\$${product.price.toStringAsFixed(0)}',
                               style: TextStyle(
                                 color: Colors.red.shade300,
                                 fontSize: 14,
@@ -275,79 +243,47 @@ class ProductDetailScreen extends StatelessWidget {
                                 fontFamily: semibold,
                               ),
                             ),
-                          if (hasSale) const SizedBox(width: Sizes.spaceBtwItems),
-                          ProductPriceText(
-                            price: effectiveSalePrice.toStringAsFixed(2),
-                            isLarge: true,
-                          ),
+                          if (product.discountPercentageDisplay > 0) const SizedBox(width: Sizes.spaceBtwItems),
+                          ProductPriceText(price: product.effectivePrice.toStringAsFixed(0), isLarge: true, currencySign: '\$'),
                         ],
                       ),
                       const SizedBox(height: Sizes.spaceBtwItems / 1.5),
-
-                      /// Title
                       ProductTitleText(title: product.title),
                       const SizedBox(height: Sizes.spaceBtwItems / 1.5),
-
-                      /// Stock
                       Row(
                         children: [
-                          ProductTitleText(title: 'Status:', smallSize: true),
+                          const ProductTitleText(title: 'Stock:', smallSize: true),
                           const SizedBox(width: Sizes.spaceBtwItems),
                           Text(
-                            stockStatus,
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 14.0,
-                              fontFamily: bold,
-                            ),
+                            controller.checkProductStockStatus(product.stock),
+                            style: TextStyle(color: Colors.black, fontSize: 14.0, fontFamily: bold),
                           ),
                         ],
                       ),
-
                       const SizedBox(height: Sizes.spaceBtwItems / 1.5),
-
-                      /// Brand
                       Row(
                         children: [
                           Text(
                             product.brand,
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 14.0,
-                              fontFamily: semibold,
-                            ),
+                            style: TextStyle(color: Colors.black, fontSize: 14.0, fontFamily: semibold),
                           ),
                           const SizedBox(width: 4.0),
-                          Icon(
-                            Iconsax.verify5,
-                            color: Colors.blue.shade600,
-                            size: 12,
-                          ),
+                          Icon(Iconsax.verify5, color: Colors.blue.shade600, size: 12),
                         ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: Sizes.spaceBtwItems),
-
                   const SizedBox(height: Sizes.spaceBtwItems),
                   ReadMoreText(
                     product.description ?? 'No description available.',
                     trimLines: 2,
                     trimMode: TrimMode.Line,
                     trimCollapsedText: ' Show more',
-                    trimExpandedText: ' Less',
-                    moreStyle: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                    ),
-                    lessStyle: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                    ),
+                    trimExpandedText: ' Show less',
+                    moreStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+                    lessStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: Sizes.spaceBtwSections),
-
-                  /// 2.4 - Checkout Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -356,41 +292,71 @@ class ProductDetailScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: Sizes.md),
                         backgroundColor: Colors.red.shade500,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            Sizes.buttonRadius,
-                          ),
+                          borderRadius: BorderRadius.circular(Sizes.buttonRadius),
                         ),
                       ),
                       child: const Text(
                         'Buy Now',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: whiteColor,
-                          fontFamily: bold,
-                        ),
+                        style: TextStyle(fontSize: 16, color: whiteColor, fontFamily: bold),
                       ),
                     ),
                   ),
                   const SizedBox(height: Sizes.spaceBtwSections),
-
-                  /// 2.6 - Reviews
                   const Divider(),
                   const SizedBox(height: Sizes.spaceBtwItems),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Reviews(100)',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      StreamBuilder<DocumentSnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('products')
+                            .doc(product.id)
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) return const Text('Reviews (0)');
+                          final data = snapshot.data!.data() as Map<String, dynamic>?;
+                          final reviewCount = data?['reviewCount'] ?? 0;
+                          return Text(
+                            'Reviews ($reviewCount)',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          );
+                        },
                       ),
                       IconButton(
-                        onPressed: () => Get.to(() => const ProductReviewsScreen()),
+                        onPressed: () => Get.to(() => ProductReviewsScreen(productId: product.id)),
                         icon: const Icon(Icons.arrow_forward_ios, size: 18),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: Sizes.spaceBtwItems),
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('products')
+                        .doc(product.id)
+                        .collection('reviews')
+                        .orderBy('timestamp', descending: true)
+                        .limit(3)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return const Text('No reviews yet.', style: TextStyle(color: darkFontGrey));
+                      }
+                      final reviews = snapshot.data!.docs;
+                      return Column(
+                        children: reviews.map((doc) {
+                          final review = doc.data() as Map<String, dynamic>;
+                          return _buildReviewCard(
+                            username: review['username'],
+                            rating: review['rating']?.toDouble() ?? 0.0,
+                            date: DateTime.fromMillisecondsSinceEpoch(
+                                (review['timestamp'] as Timestamp).millisecondsSinceEpoch)
+                                .toString()
+                                .substring(0, 10),
+                            reviewText: review['comment'] ?? '',
+                          );
+                        }).toList(),
+                      );
+                    },
                   ),
                   const SizedBox(height: Sizes.spaceBtwSections),
                 ],
@@ -398,6 +364,59 @@ class ProductDetailScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildReviewCard({
+    required String username,
+    required double rating,
+    required String date,
+    required String reviewText,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(Sizes.md),
+      margin: const EdgeInsets.only(bottom: Sizes.sm),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(Sizes.cardRadiusMd),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                username,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+              ),
+              Text(
+                date,
+                style: const TextStyle(fontSize: 12, color: Colors.black),
+              ),
+            ],
+          ),
+          if (rating > 0) ...[
+            const SizedBox(height: Sizes.sm),
+            Row(
+              children: List.generate(5, (index) {
+                return Icon(
+                  index < rating.floor() ? Icons.star : Icons.star_border,
+                  color: Colors.amber,
+                  size: 20,
+                );
+              }),
+            ),
+          ],
+          if (reviewText.isNotEmpty) ...[
+            const SizedBox(height: Sizes.sm),
+            Text(
+              reviewText,
+              style: const TextStyle(fontSize: 14, color: Colors.black),
+            ),
+          ],
+        ],
       ),
     );
   }

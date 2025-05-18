@@ -1,5 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecommerce_computer_client/consts/consts.dart';
-import 'package:ecommerce_computer_client/consts/lists.dart';
 import 'package:ecommerce_computer_client/views/category/category_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -38,43 +38,71 @@ class CategoryScreen extends StatelessWidget {
   }
 
   Widget _buildCategoryGrid() {
-    return GridView.builder(
-      shrinkWrap: true,
-      itemCount: categoriesImageList.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        mainAxisExtent: 200,
-      ),
-      itemBuilder: (context, index) {
-        return _buildCategoryCard(index);
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('categories').snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(child: Text('No categories found'));
+        }
+
+        final categories = snapshot.data!.docs;
+        return GridView.builder(
+          shrinkWrap: true,
+          itemCount: categories.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            mainAxisExtent: 200,
+          ),
+          itemBuilder: (context, index) {
+            final category = categories[index];
+            final data = category.data() as Map<String, dynamic>;
+            final imageUrl = data['image'] as String;
+            final name = data['name'] as String;
+
+            return _buildCategoryCard(imageUrl, name, category.id);
+          },
+        );
       },
     );
   }
 
-  Widget _buildCategoryCard(int index) {
+  Widget _buildCategoryCard(String imageUrl, String name, String categoryId) {
     return GestureDetector(
       onTap: () {
-        Get.to(() => CategoryDetail(title: categoriesList[index]));
+        Get.to(() => CategoryDetail(title: name, categoryId: categoryId));
       },
-      child:
-          Column(
-            children: [
-              Image.asset(
-                categoriesImageList[index],
+      child: Column(
+        children: [
+          Image.network(
+            imageUrl,
+            width: 200,
+            height: 100,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Image.asset(
+                imgP1, // Hình ảnh dự phòng nếu load imageUrl thất bại
                 width: 200,
                 height: 120,
                 fit: BoxFit.cover,
-              ),
-              const SizedBox(height: 10),
-              categoriesList[index].text
-                  .fontFamily(semibold)
-                  .align(TextAlign.center)
-                  .color(darkFontGrey)
-                  .make(),
-            ],
-          ).box.white.rounded.clip(Clip.antiAlias).outerShadowSm.make(),
+              );
+            },
+          ),
+          const SizedBox(height: 10),
+          name.text
+              .fontFamily(semibold)
+              .align(TextAlign.center)
+              .color(darkFontGrey)
+              .make(),
+        ],
+      ).box.white.rounded.clip(Clip.antiAlias).outerShadowSm.make(),
     );
   }
 }

@@ -36,8 +36,8 @@ class CheckoutController extends GetxController {
   final RxDouble totalAmount = 0.0.obs;
 
   // Loyalty points
-  final RxDouble loyaltyPoints = 0.0.obs;
-  final RxDouble pointsToRedeem = 0.0.obs;
+  final RxInt loyaltyPoints = 0.obs; // Changed to RxInt
+  final RxInt pointsToRedeem = 0.obs; // Changed to RxInt
 
   // Coupon
   final RxList<Map<String, dynamic>> availableCoupons = <Map<String, dynamic>>[].obs;
@@ -73,7 +73,7 @@ class CheckoutController extends GetxController {
 
     final userDoc = await _firestore.collection('users').doc(userId).get();
     if (userDoc.exists) {
-      loyaltyPoints.value = (userDoc.data()!['loyaltyPoints'] ?? 0.0).toDouble();
+      loyaltyPoints.value = (userDoc.data()!['loyaltyPoints'] ?? 0).toInt(); // Changed to toInt
     }
   }
 
@@ -138,9 +138,9 @@ class CheckoutController extends GetxController {
     calculateTotal();
   }
 
-  void applyLoyaltyPoints(double points) {
+  void applyLoyaltyPoints(int points) { // Changed parameter to int
     if (points <= loyaltyPoints.value) {
-      pointAmount.value = points;
+      pointAmount.value = points.toDouble(); // Convert to double for calculation compatibility
       pointsToRedeem.value = points;
       calculateTotal();
     } else {
@@ -239,10 +239,10 @@ class CheckoutController extends GetxController {
         });
       }
 
-      final earnedPoints = totalAmount.value * 0.10;
+      final earnedPoints = (totalAmount.value * 0.10).toInt(); // Convert earned points to int
       final newPoints = loyaltyPoints.value - pointsToRedeem.value + earnedPoints;
       await _firestore.collection('users').doc(userId).update({
-        'loyaltyPoints': newPoints,
+        'loyaltyPoints': newPoints, // Store as integer
       });
 
       cartController.clearCart();
